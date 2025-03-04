@@ -3,6 +3,7 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+**/ru.journal.homework.aggregator/todo
 
 ### STS ###
 .apt_generated
