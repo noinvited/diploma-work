@@ -7,11 +7,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "groups", schema = "public")
-public class Group {
+public class Group implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('groups_group_id_seq'::regclass)")

@@ -5,11 +5,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "teacher_discipline", schema = "public")
-public class TeacherDiscipline {
+public class TeacherDiscipline implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('teacher_discipline_teacher_discipline_id_seq'::regclass)")

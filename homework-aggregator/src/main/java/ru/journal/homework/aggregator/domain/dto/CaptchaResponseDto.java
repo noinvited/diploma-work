@@ -1,4 +1,4 @@
-package ru.journal.homework.aggregator.dto;
+package ru.journal.homework.aggregator.domain.dto;
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;

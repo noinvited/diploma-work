@@ -5,12 +5,15 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.io.Serializable;
 
 @Getter
 @Setter
 @Entity
 @Table(name = "discipline", schema = "public")
-public class Discipline {
+public class Discipline implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('discipline_discipline_id_seq'::regclass)")

@@ -15,7 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity
+@EnableMethodSecurity()
 public class WebSecurityConfig {
 
     @Bean
@@ -33,12 +33,13 @@ public class WebSecurityConfig {
                 )
                 .formLogin((form) -> form
                         .loginPage("/login")
+                        .defaultSuccessUrl("/")
                 )
                 .rememberMe(httpSecurityRememberMeConfigurer -> httpSecurityRememberMeConfigurer.key("1234"))
                 .exceptionHandling(configurer ->
                         configurer.accessDeniedHandler(
                                 (request, response, accessDeniedException) -> {
-                                    response.sendRedirect("/main");
+                                    response.sendRedirect("/schedule");
                                 }))
                 .logout(LogoutConfigurer::permitAll)
                 .csrf(AbstractHttpConfigurer::disable)

@@ -6,11 +6,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "electronic_journal", schema = "public")
-public class ElectronicJournal {
+public class ElectronicJournal implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('electronic_journal_electronic_journal_id_seq'::regclass)")

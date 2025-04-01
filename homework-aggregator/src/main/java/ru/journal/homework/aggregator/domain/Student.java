@@ -6,13 +6,15 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
+import java.io.Serializable;
+
 @Getter
 @Setter
 @Entity
 @Table(name = "student", schema = "public", uniqueConstraints = {
         @UniqueConstraint(name = "student_student_ticket_key", columnNames = {"student_ticket"})
 })
-public class Student {
+public class Student implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @ColumnDefault("nextval('student_student_id_seq'::regclass)")

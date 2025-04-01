@@ -8,10 +8,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import ru.journal.homework.aggregator.domain.User;
-import ru.journal.homework.aggregator.dto.Role;
+import ru.journal.homework.aggregator.domain.helperEntity.Role;
 import ru.journal.homework.aggregator.repo.UserRepo;
 
-import java.util.List;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -25,7 +24,7 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepo.findUserByLogin(username);
+        User user = userRepo.findUserByUsername(username);
         if (user == null) {
             throw new UsernameNotFoundException("User not found");
         }
@@ -33,14 +32,14 @@ public class UserService implements UserDetailsService {
     }
 
     public boolean addUser(User user){
-        User userFromDb = userRepo.findUserByLogin(user.getUsername());
+        User userFromDb = userRepo.findUserByUsername(user.getUsername());
 
         if(userFromDb != null){
             return false;
         }
 
         user.setActive(false);
-        user.setRole(String.valueOf(Role.USER));
+        user.setRole(Role.USER);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setActivationCode(UUID.randomUUID().toString());
 
@@ -49,7 +48,7 @@ public class UserService implements UserDetailsService {
         if(!StringUtils.isEmpty(user.getEmail())){
             String message = String.format(
                     "Hello, %s! \n" +
-                            "Welcome to Sweater, Please, visit next link: http://localhost:8080/activate/%s",
+                            "Welcome to HW aggregator, Please, visit next link: http://localhost:8080/activate/%s",
                     user.getUsername(), user.getActivationCode()
             );
             String subject = "Activation code";

@@ -2,7 +2,6 @@ package ru.journal.homework.aggregator.controller;
 
 import io.micrometer.common.util.StringUtils;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -14,7 +13,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.client.RestTemplate;
 import ru.journal.homework.aggregator.domain.User;
-import ru.journal.homework.aggregator.dto.CaptchaResponseDto;
+import ru.journal.homework.aggregator.domain.dto.CaptchaResponseDto;
 import ru.journal.homework.aggregator.service.UserService;
 import ru.journal.homework.aggregator.utils.ControllerUtils;
 
