@@ -8,7 +8,8 @@ CREATE TABLE IF NOT EXISTS public.users
     fio       VARCHAR(127),
     birthdate DATE,
     status    VARCHAR(50),
-    role      VARCHAR(50)
+    role      VARCHAR(50),
+    active    BOOLEAN
 );
 
 CREATE TABLE IF NOT EXISTS public.groups
