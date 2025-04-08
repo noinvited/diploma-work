@@ -3,6 +3,7 @@ package ru.journal.homework.aggregator.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
@@ -53,6 +54,7 @@ public class User implements UserDetails, Serializable {
     @Column(name = "fio", length = 127)
     private String fio;
 
+    @Past(message = "Birthdate must be in past")
     @Column(name = "birthdate")
     private LocalDate birthdate;
 
@@ -102,5 +104,15 @@ public class User implements UserDetails, Serializable {
 
     public boolean isAdmin(){
         return role.getAuthority().equals("ADMIN");
+    }
+
+    public int isStudent(){
+        if (status == null) {
+            return 0;
+        } else if ("STUDENT".equals(status)) {
+            return 1;
+        } else {
+            return 2;
+        }
     }
 }

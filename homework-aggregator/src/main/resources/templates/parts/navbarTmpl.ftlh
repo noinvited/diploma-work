@@ -13,21 +13,32 @@
                     <a class="nav-link" href="/">Главная страница</a>
                 </li>
                 <#if known>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/main">Сообщения</a>
-                    </li>
-                </#if>
-                <#if known>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/user-messages/${currentUserId}">Мои сообщения</a>
-                    </li>
-                </#if>
-                <#if isAdmin>
-                    <li class="nav-item">
-                        <a class="nav-link" href="/user">Список пользователей</a>
-                    </li>
-                </#if>
-                <#if known>
+                    <#if !isAdmin>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/schedule">Расписание</a>
+                        </li>
+                        <#if isStudent == 1>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/marks">Оценки</a>
+                            </li>
+                        <#else>
+                            <#if isStudent == 2>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="/groups">Мои группы</a>
+                                </li>
+                            </#if>
+                        </#if>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/tasks">Мои Задания</a>
+                        </li>
+                    <#else>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/editSchedule">Составить расписание</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/user">Список пользователей</a>
+                        </li>
+                    </#if>
                     <li class="nav-item">
                         <a class="nav-link" href="/user/profile">Настройки профиля</a>
                     </li>

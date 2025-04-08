@@ -83,8 +83,8 @@ CREATE TABLE IF NOT EXISTS public.lesson_type
 CREATE TABLE IF NOT EXISTS public.pair
 (
     pair_id BIGSERIAL PRIMARY KEY,
-    start   TIMESTAMP,
-    finish  TIMESTAMP
+    start   TIME,
+    finish  TIME
 );
 
 CREATE TABLE IF NOT EXISTS public.lessons

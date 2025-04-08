@@ -7,6 +7,7 @@ known = SPRING_SECURITY_CONTEXT??
     user = SPRING_SECURITY_CONTEXT.authentication.principal
     name = user.getUsername()
     isAdmin = user.isAdmin()
+    isStudent = user.isStudent()
     currentUserId = user.getId()
     >
 <#else>
