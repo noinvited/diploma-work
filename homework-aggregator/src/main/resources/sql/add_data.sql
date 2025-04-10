@@ -6,7 +6,7 @@ VALUES ('admin',
         null,
         null,
         null,
-        1,
+        'ADMIN',
         true);
 
 INSERT INTO public.groups (name_group)

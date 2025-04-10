@@ -1,8 +1,9 @@
 <#import "parts/commonTmpl.ftlh" as c>
+<#include  "parts/securityHlpr.ftlh">
 
 <@c.page>
-    <a class="btn btn-outline-primary mb-3" href="/main">
-        Вернуться назад
+    <a class="btn btn-outline-primary mb-3" href="/">
+        Вернуться в главное меню
     </a>
 
     <table class="table table-striped">
@@ -25,16 +26,18 @@
                 <td>${user.status!'Не назначен'}</td>
                 <td>${user.role}</td>
                 <td><#if user.active??>Действующий аккаунт<#else> Заблокированный</#if></td>
-                <#if user.id != currentUserId>
-                    <td><a href="/user/${user.id}">Изменить</a></td>
-                </#if>
                 <td>
-                    <form action="/user/delete" method="post">
-                        <input type="hidden" value="${user.id}" name="userId">
-                        <#if user.id != currentUserId>
+                    <#if user.id != currentUserId>
+                        <a href="/user/${user.id}">Изменить</a>
+                    </#if>
+                </td>
+                <td>
+                    <#if user.id != currentUserId>
+                        <form action="/user/delete" method="post">
+                            <input type="hidden" value="${user.id}" name="userId">
                             <button class="btn btn-primary" type="submit">Удалить</button>
-                        </#if>
-                    </form>
+                        </form>
+                    </#if>
                 </td>
             </tr>
         </#list>

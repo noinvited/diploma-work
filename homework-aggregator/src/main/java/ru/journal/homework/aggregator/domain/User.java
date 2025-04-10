@@ -63,6 +63,7 @@ public class User implements UserDetails, Serializable {
     private String status;
 
     @Column(name = "role", length = 50)
+    @Enumerated(EnumType.STRING)
     private Role role;
 
     @Column(name = "active")

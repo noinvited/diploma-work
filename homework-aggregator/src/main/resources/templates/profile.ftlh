@@ -2,12 +2,12 @@
 <#include "parts/securityHlpr.ftlh">
 
 <@c.page>
-    <a class="btn btn-outline-primary mb-3" href="/schedule">
-        Вернуться к расписанию
+    <a class="btn btn-outline-primary mb-3" <#if !isAdmin> href="/schedule" <#else>  href="/"</#if>>
+        <#if !isAdmin>Вернуться к расписанию<#else>Вернуться в главное меню</#if>
     </a>
-    <h4 class="m-3">${username}</h4>
+    <h4 class="m-3">${user.username}</h4>
     <#if isStudent != 0>
-        <div>Статус: ${status}</div>
+        <div>Статус: ${user.status}</div>
         <#if isStudent == 1>
             <div>Группа: ${group}</div>
         </#if>
@@ -38,13 +38,13 @@
             <div class="row mb-3">
                 <label class="col-sm-2 col-form-label"> Введите ФИО: </label>
                 <div class="col-sm-4">
-                    <input type="text" name="fio" class="form-control" value="${fio!}"/>
+                    <input type="text" name="fio" class="form-control" value="${user.fio!}"/>
                 </div>
             </div>
             <div class="row mb-3">
                 <label class="col-sm-2 col-form-label"> Введите дату рождения: </label>
                 <div class="col-sm-4">
-                    <input type="date" name="birthdate" class="form-control" value="${birthdate!}"/>
+                    <input type="date" name="birthdate" class="form-control" value="${user.birthdate!}"/>
                 </div>
             </div>
 
@@ -66,7 +66,7 @@
             <div class="row mb-3">
                 <label class="col-sm-1 col-form-label"> Почта: </label>
                 <div class="col-sm-5">
-                    <input type="email" name="email" class="form-control" value="${email!}"/>
+                    <input type="email" name="email" class="form-control" value="${user.email!}"/>
                 </div>
             </div>
             <button type="submit" class="btn btn-primary">Сохранить изменения</button>

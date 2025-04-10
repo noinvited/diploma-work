@@ -33,7 +33,14 @@ public class WebSecurityConfig {
                 )
                 .formLogin((form) -> form
                         .loginPage("/login")
-                        .defaultSuccessUrl("/schedule")
+                        .successHandler((request, response, authentication) -> {
+                            if (authentication.getAuthorities().stream()
+                                    .anyMatch(a -> a.getAuthority().equals("ADMIN"))) {
+                                response.sendRedirect("/");
+                            } else {
+                                response.sendRedirect("/schedule");
+                            }
+                        })
                 )
                 .rememberMe(httpSecurityRememberMeConfigurer -> httpSecurityRememberMeConfigurer.key("1234"))
                 .exceptionHandling(configurer ->

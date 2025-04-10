@@ -17,20 +17,22 @@
                         <li class="nav-item">
                             <a class="nav-link" href="/schedule">Расписание</a>
                         </li>
-                        <#if isStudent == 1>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/marks">Оценки</a>
-                            </li>
-                        <#else>
-                            <#if isStudent == 2>
+                        <#if isStudent != 0>
+                            <#if isStudent == 1>
                                 <li class="nav-item">
-                                    <a class="nav-link" href="/groups">Мои группы</a>
+                                    <a class="nav-link" href="/marks">Оценки</a>
                                 </li>
+                            <#else>
+                                <#if isStudent == 2>
+                                    <li class="nav-item">
+                                        <a class="nav-link" href="/groups">Мои группы</a>
+                                    </li>
+                                </#if>
                             </#if>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/tasks">Мои Задания</a>
+                            </li>
                         </#if>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/tasks">Мои Задания</a>
-                        </li>
                     <#else>
                         <li class="nav-item">
                             <a class="nav-link" href="/editSchedule">Составить расписание</a>

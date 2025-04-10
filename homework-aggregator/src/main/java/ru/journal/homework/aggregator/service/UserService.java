@@ -9,14 +9,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import ru.journal.homework.aggregator.domain.Student;
 import ru.journal.homework.aggregator.domain.User;
+import ru.journal.homework.aggregator.domain.dto.UserEditDto;
 import ru.journal.homework.aggregator.domain.dto.UserListDto;
+import ru.journal.homework.aggregator.domain.dto.UserProfileDto;
 import ru.journal.homework.aggregator.domain.helperEntity.Role;
 import ru.journal.homework.aggregator.repo.StudentRepo;
 import ru.journal.homework.aggregator.repo.UserRepo;
+import ru.journal.homework.aggregator.utils.mapper.UserEditMapper;
 import ru.journal.homework.aggregator.utils.mapper.UserListMapper;
+import ru.journal.homework.aggregator.utils.mapper.UserProfileMapper;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -28,6 +33,8 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final MailSenderService mailSenderService;
     private final UserListMapper userListMapper;
+    private final UserEditMapper userEditMapper;
+    private final UserProfileMapper userProfileMapper;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -153,8 +160,43 @@ public class UserService implements UserDetailsService {
         return userRepo.findAll();
     }
 
+    public void userDelete(User user){
+        userRepo.deleteById(user.getId());
+    }
+
+    //public void userSave(User user, String username, Map<String, String> form) {
+        /*user.setUsername(username);
+
+        List<String> roles = roleRepo.findAll().stream()
+                .map(role -> role.getRole()).toList();
+
+        user.getRoles().clear();
+
+        for (String key : form.keySet()){
+            if(roles.contains(key)){
+                user.getRoles().add(roleRepo.findByRole(key).get());
+            }
+        }
+
+        if(form.containsKey("status")){
+            user.setActive(true);
+        } else {
+            user.setActive(false);
+        }
+
+        userRepo.save(user);*/
+    //}
+
     public List<UserListDto> getAllUserListDto(){
         return userListMapper.toDtoList(findAll());
+    }
+
+    public UserEditDto getUserEditDto(User user){
+        return userEditMapper.toDto(user);
+    }
+
+    public UserProfileDto getUserProfileDto(User user){
+        return userProfileMapper.toDto(user);
     }
 
     public String getGroupNameByUser(User user){
