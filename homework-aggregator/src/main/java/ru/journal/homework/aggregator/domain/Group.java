@@ -24,5 +24,4 @@ public class Group implements Serializable {
     @NotNull
     @Column(name = "name_group", nullable = false, length = 50)
     private String nameGroup;
-
 }

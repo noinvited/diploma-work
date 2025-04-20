@@ -23,5 +23,4 @@ public class Discipline implements Serializable {
     @Size(max = 50)
     @Column(name = "name_discipline", length = 50)
     private String nameDiscipline;
-
 }

@@ -38,6 +38,9 @@
                             <a class="nav-link" href="/editSchedule">Составить расписание</a>
                         </li>
                         <li class="nav-item">
+                            <a class="nav-link" href="/editGroupDiscipline">Настройка групп</a>
+                        </li>
+                        <li class="nav-item">
                             <a class="nav-link" href="/user">Список пользователей</a>
                         </li>
                     </#if>

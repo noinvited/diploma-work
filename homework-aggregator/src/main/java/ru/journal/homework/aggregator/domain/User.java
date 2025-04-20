@@ -11,6 +11,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import ru.journal.homework.aggregator.domain.helperEntity.Role;
+import ru.journal.homework.aggregator.domain.helperEntity.Status;
 
 import java.io.Serializable;
 import java.time.LocalDate;
@@ -58,9 +59,9 @@ public class User implements UserDetails, Serializable {
     @Column(name = "birthdate")
     private LocalDate birthdate;
 
-    @Size(max = 50)
     @Column(name = "status", length = 50)
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private Status status;
 
     @Column(name = "role", length = 50)
     @Enumerated(EnumType.STRING)

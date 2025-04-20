@@ -21,7 +21,7 @@ public class UserController {
     @GetMapping("profile")
     String profile(Model model, @AuthenticationPrincipal User user){
         model.addAttribute("user", userService.getUserProfileDto(user));
-        model.addAttribute("group", userService.getGroupNameByUser(user));
+        model.addAttribute("group", userService.getGroupNameByStudentUser(user));
         return "profile";
     }
 
@@ -80,7 +80,7 @@ public class UserController {
             model.addAttribute("message1", "There are no changes!");
         }
         model.addAttribute("user", userService.getUserProfileDto(user));
-        model.addAttribute("group", userService.getGroupNameByUser(user));
+        model.addAttribute("group", userService.getGroupNameByStudentUser(user));
         return "profile";
     }
 
@@ -105,6 +105,12 @@ public class UserController {
     @GetMapping("{user}")
     public String userEditForm(@PathVariable User user, Model model){
         model.addAttribute("user", userService.getUserEditDto(user));
+        model.addAttribute("studentGroup", userService.getGroupNameByStudentUser(user));
+        model.addAttribute("studentTicket", userService.getStudentTicketByUser(user));
+        model.addAttribute("groups", userService.getAllGroups());
+        model.addAttribute("disciplines", userService.getAllDiscipline());
+        model.addAttribute("teacherGroups", userService.getGroupsNameByTeacherUser(user));
+        model.addAttribute("teacherDisciplines", userService.getDisciplinesNameByTeacherUser(user));
         return "userEdit";
     }
 

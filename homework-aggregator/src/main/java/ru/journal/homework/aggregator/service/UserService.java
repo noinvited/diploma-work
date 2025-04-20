@@ -7,21 +7,19 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import ru.journal.homework.aggregator.domain.Student;
-import ru.journal.homework.aggregator.domain.User;
+import ru.journal.homework.aggregator.domain.*;
 import ru.journal.homework.aggregator.domain.dto.UserEditDto;
 import ru.journal.homework.aggregator.domain.dto.UserListDto;
 import ru.journal.homework.aggregator.domain.dto.UserProfileDto;
 import ru.journal.homework.aggregator.domain.helperEntity.Role;
-import ru.journal.homework.aggregator.repo.StudentRepo;
-import ru.journal.homework.aggregator.repo.UserRepo;
+import ru.journal.homework.aggregator.domain.helperEntity.Status;
+import ru.journal.homework.aggregator.repo.*;
 import ru.journal.homework.aggregator.utils.mapper.UserEditMapper;
 import ru.journal.homework.aggregator.utils.mapper.UserListMapper;
 import ru.journal.homework.aggregator.utils.mapper.UserProfileMapper;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -30,8 +28,15 @@ import java.util.regex.Pattern;
 public class UserService implements UserDetailsService {
     private final UserRepo userRepo;
     private final StudentRepo studentRepo;
+    private final GroupRepo groupRepo;
+    private final DisciplineRepo disciplineRepo;
+    private final TeacherRepo teacherRepo;
     private final PasswordEncoder passwordEncoder;
+    private final TeacherDisciplineRepo teacherDisciplineRepo;
+    private final TeacherGroupRepo teacherGroupRepo;
+
     private final MailSenderService mailSenderService;
+
     private final UserListMapper userListMapper;
     private final UserEditMapper userEditMapper;
     private final UserProfileMapper userProfileMapper;
@@ -199,12 +204,44 @@ public class UserService implements UserDetailsService {
         return userProfileMapper.toDto(user);
     }
 
-    public String getGroupNameByUser(User user){
-        if(user.getStatus() != null) {
+    public String getGroupNameByStudentUser(User user){
+        if(user.getStatus() != null && user.getStatus() == Status.STUDENT) {
             Student student = studentRepo.findStudentByUserId(user.getId());
             return student.getGroup().getNameGroup();
         }
         return null;
+    }
+
+    public List<Group> getGroupsNameByTeacherUser(User user){
+        if(user.getStatus() != null && user.getStatus() == Status.TEACHER) {
+            Teacher teacher = teacherRepo.findTeacherByUserId(user.getId());
+            return teacherGroupRepo.findAllGroupsByTeacherId(teacher.getId());
+        }
+        return null;
+    }
+
+    public List<Discipline> getDisciplinesNameByTeacherUser(User user){
+        if(user.getStatus() != null && user.getStatus() == Status.TEACHER) {
+            Teacher teacher = teacherRepo.findTeacherByUserId(user.getId());
+            return teacherDisciplineRepo.findAllDisciplinesByTeacherId(teacher.getId());
+        }
+        return null;
+    }
+
+    public Long getStudentTicketByUser(User user){
+        if(user.getStatus() != null && user.getStatus() == Status.STUDENT) {
+            Student student = studentRepo.findStudentByUserId(user.getId());
+            return student.getStudentTicket();
+        }
+        return null;
+    }
+
+    public List<Group> getAllGroups(){
+        return groupRepo.findAll();
+    }
+
+    public List<Discipline> getAllDiscipline(){
+        return disciplineRepo.findAll();
     }
 
     private boolean emailValidation(String emailAddress) {
