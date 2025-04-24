@@ -3,7 +3,9 @@ package ru.journal.homework.aggregator.domain;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
@@ -13,6 +15,8 @@ import java.io.Serializable;
 @Setter
 @Entity
 @Table(name = "groups", schema = "public")
+@NoArgsConstructor
+@AllArgsConstructor
 public class Group implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -24,4 +28,8 @@ public class Group implements Serializable {
     @NotNull
     @Column(name = "name_group", nullable = false, length = 50)
     private String nameGroup;
+
+    public Group(String nameGroup){
+        this.nameGroup = nameGroup;
+    }
 }

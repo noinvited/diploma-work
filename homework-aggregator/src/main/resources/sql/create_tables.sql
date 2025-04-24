@@ -34,13 +34,14 @@ CREATE TABLE IF NOT EXISTS public.discipline
     name_discipline VARCHAR(50)
 );
 
-CREATE TABLE IF NOT EXISTS public.student_discipline
+CREATE TABLE IF NOT EXISTS public.group_discipline
 (
-    student_discipline_id BIGSERIAL PRIMARY KEY,
-    student_id            BIGINT,
-    discipline_id         BIGINT,
-    FOREIGN KEY (student_id) REFERENCES student (student_id),
-    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id)
+    group_discipline_id BIGSERIAL PRIMARY KEY,
+    group_id            BIGINT NOT NULL,
+    discipline_id       BIGINT NOT NULL,
+    FOREIGN KEY (group_id) REFERENCES groups (group_id),
+    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id),
+    UNIQUE (group_id, discipline_id)
 );
 
 CREATE TABLE IF NOT EXISTS public.teacher
