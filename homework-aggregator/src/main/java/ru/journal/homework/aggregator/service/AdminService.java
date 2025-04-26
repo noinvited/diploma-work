@@ -1,11 +1,11 @@
 package ru.journal.homework.aggregator.service;
 
+import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.journal.homework.aggregator.domain.Discipline;
 import ru.journal.homework.aggregator.domain.Group;
 import ru.journal.homework.aggregator.domain.GroupDiscipline;
-import ru.journal.homework.aggregator.domain.User;
 import ru.journal.homework.aggregator.repo.DisciplineRepo;
 import ru.journal.homework.aggregator.repo.GroupDisciplineRepo;
 import ru.journal.homework.aggregator.repo.GroupRepo;
@@ -22,6 +22,7 @@ public class AdminService {
     private final DisciplineRepo disciplineRepo;
     private final GroupDisciplineRepo groupDisciplineRepo;
 
+    @Transactional
     public boolean updateGroup(Long groupId, List<Long> disciplineIds) {
         Group group = groupRepo.findById(groupId).orElse(null);
         List<GroupDiscipline> existingLinks = groupDisciplineRepo.findByGroupId(groupId);

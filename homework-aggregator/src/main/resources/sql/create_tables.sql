@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS public.student
     user_id        BIGINT        NOT NULL,
     student_ticket BIGINT UNIQUE NOT NULL,
     group_id       BIGINT        NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (user_id),
-    FOREIGN KEY (group_id) REFERENCES groups (group_id)
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS public.discipline
@@ -39,8 +39,8 @@ CREATE TABLE IF NOT EXISTS public.group_discipline
     group_discipline_id BIGSERIAL PRIMARY KEY,
     group_id            BIGINT NOT NULL,
     discipline_id       BIGINT NOT NULL,
-    FOREIGN KEY (group_id) REFERENCES groups (group_id),
-    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id),
+    FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE CASCADE,
+    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id) ON DELETE CASCADE,
     UNIQUE (group_id, discipline_id)
 );
 
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS public.teacher
 (
     teacher_id BIGSERIAL PRIMARY KEY,
     user_id    BIGINT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users (user_id)
+    FOREIGN KEY (user_id) REFERENCES users (user_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS public.teacher_discipline
@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS public.teacher_discipline
     teacher_discipline_id BIGSERIAL PRIMARY KEY,
     teacher_id            BIGINT,
     discipline_id         BIGINT,
-    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id),
-    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id)
+    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id) ON DELETE CASCADE,
+    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS public.teacher_group
@@ -65,8 +65,8 @@ CREATE TABLE IF NOT EXISTS public.teacher_group
     teacher_group_id BIGSERIAL PRIMARY KEY,
     teacher_id       BIGINT,
     group_id         BIGINT,
-    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id),
-    FOREIGN KEY (group_id) REFERENCES groups (group_id)
+    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS public.status_task
@@ -97,12 +97,12 @@ CREATE TABLE IF NOT EXISTS public.lessons
     teacher_id     BIGINT NOT NULL,
     discipline_id  BIGINT NOT NULL,
     classroom      VARCHAR(50),
-    lesson_type_id BIGINT NOT NULL,
-    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id),
-    FOREIGN KEY (lesson_type_id) REFERENCES lesson_type (lesson_type_id),
-    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id),
-    FOREIGN KEY (group_id) REFERENCES groups (group_id),
-    FOREIGN KEY (pair_id) REFERENCES pair (pair_id)
+    lesson_type_id BIGINT,
+    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id) ON DELETE CASCADE,
+    FOREIGN KEY (lesson_type_id) REFERENCES lesson_type (lesson_type_id) ON DELETE SET NULL,
+    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id) ON DELETE CASCADE,
+    FOREIGN KEY (group_id) REFERENCES groups (group_id) ON DELETE CASCADE,
+    FOREIGN KEY (pair_id) REFERENCES pair (pair_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS public.lesson_message
@@ -114,8 +114,8 @@ CREATE TABLE IF NOT EXISTS public.lesson_message
     need_to_perform   BOOLEAN NOT NULL,
     deadline          TIMESTAMP,
     status_task_id    BIGINT,
-    FOREIGN KEY (status_task_id) REFERENCES status_task (status_task_id),
-    FOREIGN KEY (lessons_id) REFERENCES lessons (lessons_id)
+    FOREIGN KEY (status_task_id) REFERENCES status_task (status_task_id) ON DELETE SET NULL,
+    FOREIGN KEY (lessons_id) REFERENCES lessons (lessons_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS public.message
@@ -126,8 +126,8 @@ CREATE TABLE IF NOT EXISTS public.message
     time         TIMESTAMP     NOT NULL,
     text_message VARCHAR(2048) NOT NULL,
     file         VARCHAR(255),
-    FOREIGN KEY (from_id) REFERENCES users (user_id),
-    FOREIGN KEY (to_id) REFERENCES users (user_id)
+    FOREIGN KEY (from_id) REFERENCES users (user_id) ON DELETE SET NULL,
+    FOREIGN KEY (to_id) REFERENCES users (user_id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS public.task
@@ -137,9 +137,9 @@ CREATE TABLE IF NOT EXISTS public.task
     teacher_id        BIGINT,
     discipline_id     BIGINT,
     lesson_message_id BIGINT,
-    FOREIGN KEY (lesson_message_id) REFERENCES lesson_message (lesson_message_id),
-    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id),
-    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id)
+    FOREIGN KEY (lesson_message_id) REFERENCES lesson_message (lesson_message_id) ON DELETE CASCADE,
+    FOREIGN KEY (discipline_id) REFERENCES discipline (discipline_id) ON DELETE CASCADE,
+    FOREIGN KEY (teacher_id) REFERENCES teacher (teacher_id) ON DELETE CASCADE
 );
 
 CREATE TABLE IF NOT EXISTS public.electronic_journal
@@ -149,7 +149,7 @@ CREATE TABLE IF NOT EXISTS public.electronic_journal
     task_id               BIGINT,
     mark                  INTEGER,
     comment               VARCHAR(2048),
-    FOREIGN KEY (student_id) REFERENCES student (student_id),
-    FOREIGN KEY (task_id) REFERENCES task (task_id),
+    FOREIGN KEY (student_id) REFERENCES student (student_id) ON DELETE CASCADE,
+    FOREIGN KEY (task_id) REFERENCES task (task_id) ON DELETE CASCADE,
     CHECK (mark >= 0 AND mark <= 5)
 );

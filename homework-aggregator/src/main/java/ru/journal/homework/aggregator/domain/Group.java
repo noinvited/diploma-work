@@ -1,6 +1,7 @@
 package ru.journal.homework.aggregator.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
@@ -25,7 +26,7 @@ public class Group implements Serializable {
     private Long id;
 
     @Size(max = 50)
-    @NotNull
+    @NotBlank
     @Column(name = "name_group", nullable = false, length = 50)
     private String nameGroup;
 

@@ -55,6 +55,8 @@ public class RegistrationController {
 
         if(!response.isSuccess()){
             model.addAttribute("captchaError", "Fill captcha!");
+
+            return "registration";
         }
 
         if(user.getPassword() != null && !user.getPassword().equals(passwordConfirm)){

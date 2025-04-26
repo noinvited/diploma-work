@@ -5,4 +5,6 @@ import ru.journal.homework.aggregator.domain.Student;
 
 public interface StudentRepo extends JpaRepository<Student, Long>{
     Student findStudentByUserId(Long userId);
+    Boolean existsByStudentTicket(Long studentTicket);
+    Boolean existsByUserId(Long userId);
 }

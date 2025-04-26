@@ -48,9 +48,8 @@ public class Lesson implements Serializable {
     @Column(name = "classroom", length = 50)
     private String classroom;
 
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "lesson_type_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "lesson_type_id")
     private LessonType lessonType;
 
 }
