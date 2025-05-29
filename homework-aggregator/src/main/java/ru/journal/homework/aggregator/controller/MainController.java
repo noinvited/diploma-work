@@ -1,5 +1,6 @@
 package ru.journal.homework.aggregator.controller;
 
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
@@ -13,6 +14,7 @@ public class MainController {
     }
 
     @GetMapping("/schedule")
+    @PreAuthorize("hasAuthority('USER')")
     public String schedule(Map<String, Object> model) {
         return "schedule";
     }

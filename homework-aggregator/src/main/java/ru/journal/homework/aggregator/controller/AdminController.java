@@ -9,11 +9,11 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.journal.homework.aggregator.domain.User;
 import ru.journal.homework.aggregator.service.AdminService;
 
 import java.util.List;
 import java.util.Map;
+
 
 @Controller
 @PreAuthorize("hasAuthority('ADMIN')")
@@ -102,7 +102,7 @@ public class AdminController {
     }
 
     @GetMapping("group/{groupId}")
-    public String userEditForm(@PathVariable Long groupId, Model model){
+    public String groupEditForm(@PathVariable Long groupId, Model model){
         model.addAttribute("disciplines", adminService.getAllDiscipline());
         model.addAttribute("group", adminService.getGroup(groupId));
         model.addAttribute("groupDisciplines", adminService.getAllGroupDisciplines(groupId));
@@ -125,5 +125,17 @@ public class AdminController {
         }
 
         return "redirect:/group/" + groupId;
+    }
+
+    @GetMapping("editSchedule")
+    public String editSchedule(@RequestParam(required = false) Long selectedGroup,
+                               Model model){
+        model.addAttribute("groups", adminService.getAllGroups());
+
+        if (selectedGroup != null){
+
+        }
+
+        return "editSchedule";
     }
 }

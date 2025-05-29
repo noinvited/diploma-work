@@ -1,5 +1,6 @@
 package ru.journal.homework.aggregator.service;
 
+import jakarta.validation.constraints.Null;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -20,6 +21,7 @@ import ru.journal.homework.aggregator.utils.mapper.UserProfileMapper;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
@@ -34,6 +36,7 @@ public class UserService implements UserDetailsService {
     private final PasswordEncoder passwordEncoder;
     private final TeacherDisciplineRepo teacherDisciplineRepo;
     private final TeacherGroupRepo teacherGroupRepo;
+    private final GroupDisciplineRepo groupDisciplineRepo;
 
     private final MailSenderService mailSenderService;
 
@@ -130,7 +133,7 @@ public class UserService implements UserDetailsService {
     public int updateFio(User user, String fio){
         String userFio = user.getFio();
 
-        boolean isFioChanged = (fio != null) && !fio.equals(userFio);
+        boolean isFioChanged = (fio != null) && !fio.isEmpty() && !fio.equals(userFio);
 
         if(isFioChanged){
             user.setFio(fio);
@@ -169,28 +172,164 @@ public class UserService implements UserDetailsService {
         userRepo.deleteById(user.getId());
     }
 
-    //public void userSave(User user, String username, Map<String, String> form) {
-        /*user.setUsername(username);
+    public int updateUser(User user, String username, Map<String, String> form,
+                              String role, String statusUser, String studentId,
+                              Long group, List<Long> disciplines, List<Long> teacherGroups) {
+        User userFromDb = userRepo.findUserByUsername(username);
+        boolean sendMessage = false;
 
-        List<String> roles = roleRepo.findAll().stream()
-                .map(role -> role.getRole()).toList();
+        if(!userFromDb.getRole().equals(Role.valueOf(role))){
+            sendMessage = true;
+        }
 
-        user.getRoles().clear();
+        if(!userFromDb.getUsername().equals(username) && userRepo.existsByUsername(username)) {
+            return 0;
+        }
+        user.setUsername(username);
 
-        for (String key : form.keySet()){
-            if(roles.contains(key)){
-                user.getRoles().add(roleRepo.findByRole(key).get());
+        user.setActive(form.containsKey("status"));
+
+        if(role.equals(Role.USER.toString())){
+            user.setRole(Role.USER);
+
+            if(statusUser != null){
+                if(userFromDb.getStatus() == null){
+                    sendMessage = true;
+                }
+                if(statusUser.equals(Status.STUDENT.toString())){
+                    user.setStatus(Status.STUDENT);
+
+                    Student student = new Student();
+                    if(studentId == null){
+                        return 2;
+                    }
+                    Long studentIdNumber = Long.parseLong(studentId);
+
+                    Student studentFromDb = studentRepo.findStudentByUserId(user.getId());
+                    if(studentFromDb != null && studentFromDb.getStudentTicket() != studentIdNumber && studentRepo.existsByStudentTicket(studentIdNumber)) {
+                        return 1;
+                    }
+                    student.setStudentTicket(studentIdNumber);
+                    if(group == null){
+                        return 3;
+                    }
+                    student.setGroup(groupRepo.findById(group).get());
+                    studentRepo.save(student);
+
+                    if(teacherRepo.existsByUserId(user.getId())){
+                        teacherRepo.delete(teacherRepo.findTeacherByUserId(user.getId()));
+                    }
+                } else {
+                    user.setStatus(Status.TEACHER);
+                    Teacher teacher = new Teacher();
+
+                    //заполнить сначала дисциплины, потом найти группы в которых эти дисциплины и вывести их в контроллере динамически
+
+                    /*
+                    const confirmDisciplinesBtn = document.getElementById('confirmDisciplines');
+                    if (confirmDisciplinesBtn) {
+                        confirmDisciplinesBtn.addEventListener('click', function() {
+                            const selectedDisciplines = Array.from(document.querySelectorAll('.discipline-checkbox:checked'))
+                                .map(checkbox => checkbox.value);
+
+                            if (selectedDisciplines.length === 0) {
+                                alert('Пожалуйста, выберите хотя бы одну дисциплину');
+                                return;
+                            }
+
+                            // Отправляем AJAX запрос для получения групп
+                            fetch('/user/getGroupsByDisciplines', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                },
+                                body: `disciplineIds=${selectedDisciplines.join(',')}&userId=${document.querySelector('input[name="userId"]').value}`
+                            })
+                            .then(response => response.json())
+                            .then(groups => {
+                                const groupsContainer = document.getElementById('groupsContainer');
+                                const groupsCheckboxes = document.getElementById('groupsCheckboxes');
+
+                                // Очищаем текущие чекбоксы групп
+                                groupsCheckboxes.innerHTML = '';
+
+                                // Добавляем новые чекбоксы групп
+                                groups.forEach(group => {
+                                    const checkboxDiv = document.createElement('div');
+                                    checkboxDiv.className = 'form-check';
+
+                                    const checkbox = document.createElement('input');
+                                    checkbox.type = 'checkbox';
+                                    checkbox.className = 'form-check-input group-checkbox';
+                                    checkbox.name = 'teacherGroups';
+                                    checkbox.value = group.id;
+                                    checkbox.id = 'group-' + group.id;
+
+                                    const label = document.createElement('label');
+                                    label.className = 'form-check-label';
+                                    label.htmlFor = 'group-' + group.id;
+                                    label.textContent = group.nameGroup;
+
+                                    checkboxDiv.appendChild(checkbox);
+                                    checkboxDiv.appendChild(label);
+                                    groupsCheckboxes.appendChild(checkboxDiv);
+                                });
+
+                                // Показываем контейнер с группами
+                                groupsContainer.classList.remove('d-none');
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                alert('Произошла ошибка при загрузке групп');
+                            });
+                        });
+                    }
+                     */
+
+                    if(disciplines != null){
+                        return 4;
+                    }
+
+                    if(teacherGroups != null){
+                        return 5;
+                    }
+
+                    teacherRepo.save(teacher);
+
+                    if(studentRepo.existsByUserId(user.getId())){
+                        studentRepo.delete(studentRepo.findStudentByUserId(user.getId()));
+                    }
+                }
+            }
+        } else {
+            user.setRole(Role.ADMIN);
+            user.setStatus(null);
+
+            if(studentRepo.existsByUserId(user.getId())){
+                studentRepo.delete(studentRepo.findStudentByUserId(user.getId()));
+            }
+            if(teacherRepo.existsByUserId(user.getId())){
+                teacherRepo.delete(teacherRepo.findTeacherByUserId(user.getId()));
             }
         }
 
-        if(form.containsKey("status")){
-            user.setActive(true);
-        } else {
-            user.setActive(false);
+        userRepo.save(user);
+
+        if(sendMessage){
+            if(!StringUtils.isEmpty(user.getEmail())){
+                String message = String.format(
+                        "Hello, %s! \n" +
+                                "The account has been filled in by the administrator, and now the entire functionality of the site is available to you.",
+                        user.getUsername()
+                );
+                String subject = "Updated status by administrator";
+
+                mailSenderService.send(user.getEmail(), subject, message);
+            }
         }
 
-        userRepo.save(user);*/
-    //}
+        return 6;
+    }
 
     public List<UserListDto> getAllUserListDto(){
         return userListMapper.toDtoList(findAll());
@@ -242,6 +381,10 @@ public class UserService implements UserDetailsService {
 
     public List<Discipline> getAllDiscipline(){
         return disciplineRepo.findAll();
+    }
+
+    public List<Group> getGroupsByDisciplines(List<Long> disciplineIds){
+        return groupDisciplineRepo.findAllGroupsByDisciplineIds(disciplineIds);
     }
 
     private boolean emailValidation(String emailAddress) {

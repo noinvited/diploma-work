@@ -6,10 +6,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.journal.homework.aggregator.domain.Group;
 import ru.journal.homework.aggregator.domain.User;
+import ru.journal.homework.aggregator.repo.TeacherDisciplineRepo;
 import ru.journal.homework.aggregator.service.UserService;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -17,6 +21,8 @@ import java.util.Map;
 public class UserController {
     @Autowired
     private UserService userService;
+    @Autowired
+    private TeacherDisciplineRepo teacherDisciplineRepo;
 
     @GetMapping("profile")
     String profile(Model model, @AuthenticationPrincipal User user){
@@ -114,14 +120,62 @@ public class UserController {
         return "userEdit";
     }
 
-    /*@PreAuthorize("hasAuthority('ADMIN')")
-    @PostMapping
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @PostMapping("{user}")
     public String userSave(
-            @RequestParam String username,
             @RequestParam Map<String, String> form,
-            @RequestParam("userId") User user
+            @RequestParam("userId") User user,
+            @RequestParam String username,
+            @RequestParam String role,
+            @RequestParam(required = false) String statusUser,
+            @RequestParam(required = false) String studentId,
+            @RequestParam(required = false) Long group,
+            @RequestParam(required = false) List<Long> disciplines,
+            @RequestParam(required = false) List<Long> teacherGroups,
+            RedirectAttributes redirectAttributes
     ){
-        userService.userSave(user, username, form);
-        return "redirect:/user";
-    }*/
+        int isUserUpdate = userService.updateUser(user, username, form, role, statusUser, studentId, group, disciplines, teacherGroups);
+
+        if(isUserUpdate == 6){
+            redirectAttributes.addFlashAttribute("messageType1", "success");
+            redirectAttributes.addFlashAttribute("message1", "User updated successfully!");
+        } else {
+            if(isUserUpdate == 0){
+                redirectAttributes.addFlashAttribute("messageType1", "danger");
+                redirectAttributes.addFlashAttribute("message1", "Username is already exist!");
+            } else {
+                if(isUserUpdate == 1){
+                    redirectAttributes.addFlashAttribute("messageType1", "danger");
+                    redirectAttributes.addFlashAttribute("message1", "student ID number is already exist!");
+                } else {
+                    if(isUserUpdate == 2){
+                        redirectAttributes.addFlashAttribute("messageType1", "danger");
+                        redirectAttributes.addFlashAttribute("message1", "You have to fill student ID number!");
+                    } else {
+                        if(isUserUpdate == 3){
+                            redirectAttributes.addFlashAttribute("messageType1", "danger");
+                            redirectAttributes.addFlashAttribute("message1", "You have to fill student group!");
+                        } else {
+                            if(isUserUpdate == 4){
+                                redirectAttributes.addFlashAttribute("messageType1", "danger");
+                                redirectAttributes.addFlashAttribute("message1", "You have to fill teacher disciplines!");
+                            } else {
+                                redirectAttributes.addFlashAttribute("messageType1", "danger");
+                                redirectAttributes.addFlashAttribute("message1", "You have to fill teacher groups!");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return "redirect:/user" + user.getId();
+    }
+
+    @PreAuthorize("hasAuthority('ADMIN')")
+    @GetMapping("{user}/getGroupsByDisciplines")
+    @ResponseBody
+    public List<Group> getGroupsByDisciplines(@RequestParam List<Long> disciplineIds){
+        return userService.getGroupsByDisciplines(disciplineIds);
+    }
 }
