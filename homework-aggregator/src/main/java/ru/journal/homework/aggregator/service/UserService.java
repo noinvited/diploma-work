@@ -198,9 +198,8 @@ public class UserService implements UserDetailsService {
                 }
                 if(statusUser.equals(Status.STUDENT.toString())){
                     user.setStatus(Status.STUDENT);
-
-                    Student student = new Student();
-                    if(studentId == null){
+                    
+                    if(org.apache.commons.lang3.StringUtils.isBlank(studentId)){
                         return 2;
                     }
                     Long studentIdNumber = Long.parseLong(studentId);
@@ -209,14 +208,19 @@ public class UserService implements UserDetailsService {
                     if(studentFromDb != null && studentFromDb.getStudentTicket() != studentIdNumber && studentRepo.existsByStudentTicket(studentIdNumber)) {
                         return 1;
                     }
-                    student.setStudentTicket(studentIdNumber);
                     if(group == null){
                         return 3;
                     }
+
+                    // создаем студента
+                    Student student = new Student();
+                    student.setUser(user);
+                    student.setStudentTicket(studentIdNumber);
                     student.setGroup(groupRepo.findById(group).get());
                     studentRepo.save(student);
 
-                    if(teacherRepo.existsByUserId(user.getId())){
+                    // Удаляем информацию о преподавателе, если она есть
+                    if (teacherRepo.existsByUserId(user.getId())) {
                         teacherRepo.delete(teacherRepo.findTeacherByUserId(user.getId()));
                     }
                 } else {
@@ -347,6 +351,14 @@ public class UserService implements UserDetailsService {
         if(user.getStatus() != null && user.getStatus() == Status.STUDENT) {
             Student student = studentRepo.findStudentByUserId(user.getId());
             return student.getGroup().getNameGroup();
+        }
+        return null;
+    }
+
+    public Long getGroupByStudentUser(User user){
+        if(user.getStatus() != null && user.getStatus() == Status.STUDENT) {
+            Student student = studentRepo.findStudentByUserId(user.getId());
+            return student.getGroup().getId();
         }
         return null;
     }

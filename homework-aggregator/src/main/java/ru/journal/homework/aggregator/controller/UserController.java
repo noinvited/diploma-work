@@ -111,7 +111,7 @@ public class UserController {
     @GetMapping("{user}")
     public String userEditForm(@PathVariable User user, Model model){
         model.addAttribute("user", userService.getUserEditDto(user));
-        model.addAttribute("studentGroup", userService.getGroupNameByStudentUser(user));
+        model.addAttribute("studentGroup", userService.getGroupByStudentUser(user));
         model.addAttribute("studentTicket", userService.getStudentTicketByUser(user));
         model.addAttribute("groups", userService.getAllGroups());
         model.addAttribute("disciplines", userService.getAllDiscipline());
@@ -169,7 +169,7 @@ public class UserController {
             }
         }
 
-        return "redirect:/user" + user.getId();
+        return "redirect:/user/" + user.getId();
     }
 
     @PreAuthorize("hasAuthority('ADMIN')")

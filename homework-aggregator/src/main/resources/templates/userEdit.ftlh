@@ -13,7 +13,7 @@
     </#if>
 
     <div class="card card-body col-sm-6 mb-3">
-        <form action="/user/editGroupDiscipline" method="post">
+        <form action="/user/{userId}" method="post">
             <input type="text" name="username" class="form-control" value="${user.username}" required>
 
             <h6 class="mt-1">Статус учетной записи:</h6>
@@ -65,7 +65,7 @@
                 <div class="form-group mb-1">
                     <h6 class="mt-1">Номер студенческого билета:</h6>
                     <input type="text" class="form-control" id="studentId" name="studentId"
-                           value="<#if studentTicket??>${studentTicket}</#if>">
+                           value="<#if studentTicket??>${studentTicket?c}</#if>">
                 </div>
 
                 <div class="form-group mb-3">
