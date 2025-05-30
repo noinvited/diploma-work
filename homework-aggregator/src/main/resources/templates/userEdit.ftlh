@@ -119,7 +119,7 @@
                                 <input class="form-check-input group-checkbox" type="checkbox"
                                        name="teacherGroups" value="${(group.id)!''}"
                                        id="group-${(group.id)!''}"
-                                       <#if teacherGroups?? && group.id?? && teacherGroups?seq_contains(group.id)>checked</#if>>
+                                       <#if teacherGroups?? && teacherGroups?seq_contains(group)>checked</#if>>
                                 <label class="form-check-label ms-2" for="group-${(group.id)!''}">
                                     ${(group.nameGroup)!''}
                                 </label>
@@ -170,10 +170,14 @@
                             if (this.value === 'STUDENT') {
                                 studentForm.classList.remove('d-none');
                                 teacherForm.classList.add('d-none');
+                                groupsContainer.classList.add('d-none');
                             } else if (this.value === 'TEACHER') {
                                 teacherForm.classList.remove('d-none');
                                 studentForm.classList.add('d-none');
-                                groupsContainer.classList.add('d-none');
+                                // Показываем группы, если они уже были выбраны
+                                if (document.querySelector('.group-checkbox[checked]')) {
+                                    groupsContainer.classList.remove('d-none');
+                                }
                             }
                         });
                     });
@@ -256,6 +260,10 @@
                                 studentForm.classList.remove('d-none');
                             } else if (initialStatus.value === 'TEACHER') {
                                 teacherForm.classList.remove('d-none');
+                                // Показываем группы преподавателя сразу
+                                if (document.querySelector('.group-checkbox[checked]')) {
+                                    groupsContainer.classList.remove('d-none');
+                                }
                             }
                         }
                     }
