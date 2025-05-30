@@ -8,8 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.journal.homework.aggregator.domain.Pair;
+import ru.journal.homework.aggregator.domain.Teacher;
 import ru.journal.homework.aggregator.service.AdminService;
 
 import java.util.List;
@@ -138,8 +139,35 @@ public class AdminController {
             model.addAttribute("selectedGroup", adminService.getGroup(selectedGroup));
             model.addAttribute("pairTimes", adminService.getAllPairs());
             model.addAttribute("days", adminService.getDatesString(weekShift));
+            model.addAttribute("dates", adminService.getDates(weekShift));
+            model.addAttribute("lessons", adminService.getWeekLessons(selectedGroup, weekShift));
+            model.addAttribute("lessonTypes", adminService.getAllLessonTypes());
+            model.addAttribute("disciplines", adminService.getAllDiscipline());
         }
 
         return "editSchedule";
     }
+
+    @GetMapping("/discipline/{disciplineId}/teachers")
+    @ResponseBody
+    public List<Teacher> getTeachersByDiscipline(@PathVariable Long disciplineId) {
+        return adminService.getTeachersByDiscipline(disciplineId);
+    }
+
+    /*@PostMapping("/lessons")
+    public ResponseEntity<?> createLesson(@RequestBody LessonRequest request) {
+        adminService.createLesson(request);
+        return ResponseEntity.ok().build();
+    }
+
+    class LessonRequest {
+    private String date;
+    private Long pairId;
+    private Long groupId;
+    private Long disciplineId;
+    private Long teacherId;
+    private String classroom;
+    private Long lessonTypeId;
+    }
+    */
 }

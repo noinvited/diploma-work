@@ -60,16 +60,49 @@
                                         ${pair.start?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd HH:mm:ss")?string("HH:mm")} - 
                                         ${pair.finish?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd HH:mm:ss")?string("HH:mm")}
                                     </td>
-                                    <#list 1..6 as day>
+                                    <#list dates as date>
+
+
                                         <td class="align-middle position-relative" style="min-width: 200px;">
-                                            <button type="button" 
-                                                    class="btn btn-outline-primary btn-sm position-absolute top-50 start-50 translate-middle" 
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#addLessonModal"
-                                                    data-day="${day}"
-                                                    data-pair="${pair.id}">
-                                                <i class="bi bi-plus-lg"></i> Добавить пару
-                                            </button>
+                                            <#assign lessonKey = date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('yyyy-MM-dd') + "_" + pair.id>
+                                            <#if lessons[lessonKey]??>
+                                                <#assign lesson = lessons[lessonKey]>
+                                                <div class="card">
+                                                    <div class="card-body p-2">
+                                                        <h6 class="card-title mb-1">${lesson.discipline.nameDiscipline}</h6>
+                                                        <p class="card-text mb-1">
+                                                            <small>
+                                                                <i class="bi bi-person"></i> ${lesson.teacher.user.username}<br>
+                                                                <i class="bi bi-geo-alt"></i> ${lesson.classroom!''}<br>
+                                                                <#if lesson.lessonType??><i class="bi bi-journal-text"></i> ${lesson.lessonType.type}</#if>
+                                                            </small>
+                                                        </p>
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button type="button" class="btn btn-outline-primary"
+                                                                    data-bs-toggle="modal" 
+                                                                    data-bs-target="#editLessonModal"
+                                                                    data-lesson-id="${lesson.id}"
+                                                                    data-day="${date}"
+                                                                    data-pair="${pair.id}">
+                                                                <i class="bi bi-pencil"></i>
+                                                            </button>
+                                                            <button type="button" class="btn btn-outline-danger"
+                                                                    onclick="deleteLesson(${lesson.id})">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <#else>
+                                                <button type="button" 
+                                                        class="btn btn-outline-primary btn-sm position-absolute top-50 start-50 translate-middle" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#addLessonModal"
+                                                        data-day="${date}"
+                                                        data-pair="${pair.id}">
+                                                    <i class="bi bi-plus-lg"></i> Добавить пару
+                                                </button>
+                                            </#if>
                                         </td>
                                     </#list>
                                 </tr>
@@ -105,8 +138,8 @@
                             
                             <div class="mb-3">
                                 <label for="teacher" class="form-label">Преподаватель</label>
-                                <select class="form-select" id="teacher" name="teacher" required>
-                                    <option value="">Выберите преподавателя</option>
+                                <select class="form-select" id="teacher" name="teacher" required disabled>
+                                    <option value="">Сначала выберите дисциплину</option>
                                 </select>
                             </div>
                             
@@ -114,11 +147,76 @@
                                 <label for="classroom" class="form-label">Аудитория</label>
                                 <input type="text" class="form-control" id="classroom" name="classroom" required>
                             </div>
+
+                            <div class="mb-3">
+                                <label for="lessonType" class="form-label">Тип занятия</label>
+                                <select class="form-select" id="lessonType" name="lessonType">
+                                    <option value="">Выберите тип занятия</option>
+                                    <#list lessonTypes as type>
+                                        <option value="${type.id}">${type.type}</option>
+                                    </#list>
+                                </select>
+                            </div>
                         </form>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
                         <button type="button" class="btn btn-primary" onclick="saveLessonToSchedule()">Сохранить</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для редактирования пары -->
+        <div class="modal fade" id="editLessonModal" tabindex="-1" aria-labelledby="editLessonModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editLessonModalLabel">Редактировать пару</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editLessonForm">
+                            <input type="hidden" id="editLessonId" name="lessonId">
+                            <input type="hidden" id="editDayOfWeek" name="dayOfWeek">
+                            <input type="hidden" id="editPairNumber" name="pairNumber">
+                            
+                            <div class="mb-3">
+                                <label for="editDiscipline" class="form-label">Дисциплина</label>
+                                <select class="form-select" id="editDiscipline" name="discipline" required>
+                                    <option value="">Выберите дисциплину</option>
+                                    <#list disciplines as discipline>
+                                        <option value="${discipline.id}">${discipline.nameDiscipline}</option>
+                                    </#list>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="editTeacher" class="form-label">Преподаватель</label>
+                                <select class="form-select" id="editTeacher" name="teacher" required>
+                                    <option value="">Выберите преподавателя</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="editClassroom" class="form-label">Аудитория</label>
+                                <input type="text" class="form-control" id="editClassroom" name="classroom" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="editLessonType" class="form-label">Тип занятия</label>
+                                <select class="form-select" id="editLessonType" name="lessonType">
+                                    <option value="">Выберите тип занятия</option>
+                                    <#list lessonTypes as type>
+                                        <option value="${type.id}">${type.type}</option>
+                                    </#list>
+                                </select>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                        <button type="button" class="btn btn-primary" onclick="updateLesson()">Сохранить</button>
                     </div>
                 </div>
             </div>
@@ -134,14 +232,56 @@
                 
                 document.getElementById('dayOfWeek').value = day;
                 document.getElementById('pairNumber').value = pair;
+
+                // Сброс формы
+                document.getElementById('discipline').value = '';
+                const teacherSelect = document.getElementById('teacher');
+                teacherSelect.value = '';
+                teacherSelect.disabled = true;
+                teacherSelect.innerHTML = '<option value="">Сначала выберите дисциплину</option>';
+                document.getElementById('classroom').value = '';
+                document.getElementById('lessonType').value = '';
             });
 
             // Обработка изменения дисциплины
             document.getElementById('discipline').addEventListener('change', function() {
                 const disciplineId = this.value;
+                const teacherSelect = document.getElementById('teacher');
+                
                 if (disciplineId) {
-                    // Здесь можно добавить AJAX запрос для получения преподавателей по выбранной дисциплине
-                    // и заполнить select с id="teacher"
+                    teacherSelect.disabled = true;
+                    teacherSelect.innerHTML = '<option value="">Загрузка преподавателей...</option>';
+                    
+                    fetch('/discipline/' + disciplineId + '/teachers')
+                        .then(response => response.json())
+                        .then(teachers => {
+
+                            console.log('Получены преподаватели:', teachers);
+                            
+                            teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
+                            if (teachers && teachers.length > 0) {
+                                teachers.forEach(teacher => {
+                                    const option = document.createElement('option');
+                                    option.value = teacher.id;
+                                    option.textContent = teacher.user.username;
+                                    teacherSelect.appendChild(option);
+                                });
+                                teacherSelect.disabled = false;
+                            } else {
+                                teacherSelect.innerHTML = '<option value="">Нет доступных преподавателей</option>';
+                                teacherSelect.disabled = true;
+                            }
+                        })
+                        .catch(error => {
+                            
+                            console.error('Ошибка при загрузке преподавателей:', error);
+
+                            teacherSelect.innerHTML = '<option value="">Ошибка загрузки преподавателей</option>';
+                            teacherSelect.disabled = true;
+                        });
+                } else {
+                    teacherSelect.innerHTML = '<option value="">Сначала выберите дисциплину</option>';
+                    teacherSelect.disabled = true;
                 }
             });
 
@@ -149,9 +289,37 @@
             function saveLessonToSchedule() {
                 const form = document.getElementById('addLessonForm');
                 if (form.checkValidity()) {
-                    // Здесь можно добавить AJAX запрос для сохранения пары
-                    const modal = bootstrap.Modal.getInstance(addLessonModal);
-                    modal.hide();
+                    const formData = new FormData(form);
+                    const lessonData = {
+                        date: formData.get('dayOfWeek'),
+                        pairId: formData.get('pairNumber'),
+                        groupId: ${selectedGroup.id},
+                        disciplineId: formData.get('discipline'),
+                        teacherId: formData.get('teacher'),
+                        classroom: formData.get('classroom'),
+                        lessonTypeId: formData.get('lessonType') || null
+                    };
+
+                    fetch('/api/lessons', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(lessonData)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            const modal = bootstrap.Modal.getInstance(addLessonModal);
+                            modal.hide();
+                            window.location.reload();
+                        } else {
+                            throw new Error('Не удалось сохранить пару');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Ошибка:', error);
+                        alert('Произошла ошибка при сохранении пары');
+                    });
                 } else {
                     form.reportValidity();
                 }
@@ -163,14 +331,4 @@
             });
         </script>
     </#if>
-
-
-
-
-
-
-
-
-
-
 </@c.page>

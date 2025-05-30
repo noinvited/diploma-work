@@ -23,6 +23,9 @@ public class AdminService {
     private final GroupDisciplineRepo groupDisciplineRepo;
     private final PairRepo pairRepo;
     private final LessonRepo lessonRepo;
+    private final LessonTypeRepo lessonTypeRepo;
+    private final TeacherDisciplineRepo teacherDisciplineRepo;
+    private final TeacherRepo teacherRepo;
 
     @Transactional
     public boolean updateGroup(Long groupId, List<Long> disciplineIds) {
@@ -187,4 +190,29 @@ public class AdminService {
         
         return lessonMap;
     }
+
+    public List<LessonType> getAllLessonTypes() {
+        return lessonTypeRepo.findAll();
+    }
+
+    public List<Teacher> getTeachersByDiscipline(Long disciplineId) {
+        return teacherDisciplineRepo.findTeachersByDisciplineId(disciplineId);
+    }
+
+    /*@Transactional
+    public void createLesson(LessonRequest request) {
+        Lesson lesson = new Lesson();
+        lesson.setDate(LocalDate.parse(request.getDate()));
+        lesson.setPair(pairRepo.findById(request.getPairId()).orElseThrow());
+        lesson.setGroup(groupRepo.findById(request.getGroupId()).orElseThrow());
+        lesson.setTeacher(teacherRepo.findById(request.getTeacherId()).orElseThrow());
+        lesson.setDiscipline(disciplineRepo.findById(request.getDisciplineId()).orElseThrow());
+        lesson.setClassroom(request.getClassroom());
+        
+        if (request.getLessonTypeId() != null) {
+            lesson.setLessonType(lessonTypeRepo.findById(request.getLessonTypeId()).orElse(null));
+        }
+        
+        lessonRepo.save(lesson);
+    }*/
 }
