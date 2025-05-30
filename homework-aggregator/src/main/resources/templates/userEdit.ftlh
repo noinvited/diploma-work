@@ -13,6 +13,7 @@
     </#if>
 
     <div class="card card-body col-sm-6 mb-3">
+        <h5 class="card-title">Редактирование пользователя:</h5>
         <form action="/user/{userId}" method="post">
             <input type="text" name="username" class="form-control" value="${user.username}" required>
 
@@ -137,6 +138,13 @@
                     const teacherForm = document.getElementById('teacherForm');
                     const groupsContainer = document.getElementById('groupsContainer');
                     const loadingIndicator = document.getElementById('loadingIndicator');
+                    const mainForm = document.querySelector('form');
+
+                    // Fix form action URL
+                    mainForm.addEventListener('DOMContentLoaded', function() {
+                        const userId = document.querySelector('input[name="userId"]').value;
+                        mainForm.action = '/user/' + userId;
+                    });
 
                     // Handle role selection
                     roleRadios.forEach(radio => {

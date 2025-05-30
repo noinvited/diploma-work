@@ -25,7 +25,7 @@
                 <td>${user.fio! 'Не указано'}</td>
                 <td>${user.status!'Не назначен'}</td>
                 <td>${user.role}</td>
-                <td><#if user.active??>Действующий аккаунт<#else> Заблокированный</#if></td>
+                <td><#if user.active>Действующий аккаунт<#else>Заблокированный</#if></td>
                 <td>
                     <#if user.id != currentUserId>
                         <a href="/user/${user.id}">Изменить</a>

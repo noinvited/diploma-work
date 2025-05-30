@@ -6,12 +6,16 @@
         <#if !isAdmin>Вернуться к расписанию<#else>Вернуться в главное меню</#if>
     </a>
     <h4 class="m-3">${user.username}</h4>
-    <#if isStudent != 0>
-        <div>Статус: ${user.status}</div>
-        <#if isStudent == 1>
-            <div>Группа: ${group}</div>
+
+    <div class="mb-3">
+        <#if isStudent != 0>
+            <div class="mb-1">Статус: <strong>${user.status}</strong></div>
+            <#if isStudent == 1>
+                <div>Группа: <strong>${group}</strong></div>
+            </#if>
         </#if>
-    </#if>
+    </div>
+
     <#if message1??>
         <div class="alert alert-${messageType1}" role="alert">
             ${message1}

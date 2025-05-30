@@ -1,12 +1,12 @@
 package ru.journal.homework.aggregator.service;
 
-import jakarta.validation.constraints.Null;
 import lombok.AllArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import ru.journal.homework.aggregator.domain.*;
 import ru.journal.homework.aggregator.domain.dto.UserEditDto;
@@ -172,6 +172,7 @@ public class UserService implements UserDetailsService {
         userRepo.deleteById(user.getId());
     }
 
+    @Transactional
     public int updateUser(User user, String username, Map<String, String> form,
                               String role, String statusUser, String studentId,
                               Long group, List<Long> disciplines, List<Long> teacherGroups) {
@@ -197,24 +198,32 @@ public class UserService implements UserDetailsService {
                     sendMessage = true;
                 }
                 if(statusUser.equals(Status.STUDENT.toString())){
-                    user.setStatus(Status.STUDENT);
-                    
                     if(org.apache.commons.lang3.StringUtils.isBlank(studentId)){
                         return 2;
                     }
                     Long studentIdNumber = Long.parseLong(studentId);
 
-                    Student studentFromDb = studentRepo.findStudentByUserId(user.getId());
-                    if(studentFromDb != null && studentFromDb.getStudentTicket() != studentIdNumber && studentRepo.existsByStudentTicket(studentIdNumber)) {
-                        return 1;
+                    // Проверяем существующего студента
+                    Student student = studentRepo.findStudentByUserId(user.getId());
+                    
+                    // Проверяем уникальность студенческого билета
+                    if(studentRepo.existsByStudentTicket(studentIdNumber)) {
+                        // Если это не тот же самый студент
+                        if(student == null || !student.getStudentTicket().equals(studentIdNumber)) {
+                            return 1;
+                        }
                     }
+
                     if(group == null){
                         return 3;
                     }
 
-                    // создаем студента
-                    Student student = new Student();
-                    student.setUser(user);
+                    // создаем и обновляем студента
+                    user.setStatus(Status.STUDENT);
+                    if(student == null){
+                        student = new Student();
+                        student.setUser(user);
+                    }
                     student.setStudentTicket(studentIdNumber);
                     student.setGroup(groupRepo.findById(group).get());
                     studentRepo.save(student);
@@ -224,82 +233,48 @@ public class UserService implements UserDetailsService {
                         teacherRepo.delete(teacherRepo.findTeacherByUserId(user.getId()));
                     }
                 } else {
-                    user.setStatus(Status.TEACHER);
-                    Teacher teacher = new Teacher();
-
-                    //заполнить сначала дисциплины, потом найти группы в которых эти дисциплины и вывести их в контроллере динамически
-
-                    /*
-                    const confirmDisciplinesBtn = document.getElementById('confirmDisciplines');
-                    if (confirmDisciplinesBtn) {
-                        confirmDisciplinesBtn.addEventListener('click', function() {
-                            const selectedDisciplines = Array.from(document.querySelectorAll('.discipline-checkbox:checked'))
-                                .map(checkbox => checkbox.value);
-
-                            if (selectedDisciplines.length === 0) {
-                                alert('Пожалуйста, выберите хотя бы одну дисциплину');
-                                return;
-                            }
-
-                            // Отправляем AJAX запрос для получения групп
-                            fetch('/user/getGroupsByDisciplines', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/x-www-form-urlencoded',
-                                },
-                                body: `disciplineIds=${selectedDisciplines.join(',')}&userId=${document.querySelector('input[name="userId"]').value}`
-                            })
-                            .then(response => response.json())
-                            .then(groups => {
-                                const groupsContainer = document.getElementById('groupsContainer');
-                                const groupsCheckboxes = document.getElementById('groupsCheckboxes');
-
-                                // Очищаем текущие чекбоксы групп
-                                groupsCheckboxes.innerHTML = '';
-
-                                // Добавляем новые чекбоксы групп
-                                groups.forEach(group => {
-                                    const checkboxDiv = document.createElement('div');
-                                    checkboxDiv.className = 'form-check';
-
-                                    const checkbox = document.createElement('input');
-                                    checkbox.type = 'checkbox';
-                                    checkbox.className = 'form-check-input group-checkbox';
-                                    checkbox.name = 'teacherGroups';
-                                    checkbox.value = group.id;
-                                    checkbox.id = 'group-' + group.id;
-
-                                    const label = document.createElement('label');
-                                    label.className = 'form-check-label';
-                                    label.htmlFor = 'group-' + group.id;
-                                    label.textContent = group.nameGroup;
-
-                                    checkboxDiv.appendChild(checkbox);
-                                    checkboxDiv.appendChild(label);
-                                    groupsCheckboxes.appendChild(checkboxDiv);
-                                });
-
-                                // Показываем контейнер с группами
-                                groupsContainer.classList.remove('d-none');
-                            })
-                            .catch(error => {
-                                console.error('Error:', error);
-                                alert('Произошла ошибка при загрузке групп');
-                            });
-                        });
+                    // Проверяем существующего преподавателя
+                    Teacher teacher = teacherRepo.findTeacherByUserId(user.getId());
+                    if(teacher == null) {
+                        teacher = new Teacher();
+                        teacher.setUser(user);
                     }
-                     */
 
-                    if(disciplines != null){
+                    // Проверяем наличие дисциплин
+                    if(disciplines == null || disciplines.isEmpty()) {
                         return 4;
                     }
 
-                    if(teacherGroups != null){
+                    // Проверяем наличие групп
+                    if(teacherGroups == null || teacherGroups.isEmpty()) {
                         return 5;
                     }
 
-                    teacherRepo.save(teacher);
+                    // Сохраняем преподавателя
+                    user.setStatus(Status.TEACHER);
+                    teacher = teacherRepo.save(teacher);
 
+                    // Очищаем старые связи
+                    teacherDisciplineRepo.deleteByTeacherId(teacher.getId());
+                    teacherGroupRepo.deleteByTeacherId(teacher.getId());
+
+                    // Добавляем дисциплины
+                    for(Long disciplineId : disciplines) {
+                        TeacherDiscipline teacherDiscipline = new TeacherDiscipline();
+                        teacherDiscipline.setTeacher(teacher);
+                        teacherDiscipline.setDiscipline(disciplineRepo.findById(disciplineId).get());
+                        teacherDisciplineRepo.save(teacherDiscipline);
+                    }
+
+                    // Добавляем группы
+                    for(Long groupId : teacherGroups) {
+                        TeacherGroup teacherGroup = new TeacherGroup();
+                        teacherGroup.setTeacher(teacher);
+                        teacherGroup.setGroup(groupRepo.findById(groupId).get());
+                        teacherGroupRepo.save(teacherGroup);
+                    }
+
+                    // Удаляем информацию о студенте, если она есть
                     if(studentRepo.existsByUserId(user.getId())){
                         studentRepo.delete(studentRepo.findStudentByUserId(user.getId()));
                     }
@@ -350,7 +325,9 @@ public class UserService implements UserDetailsService {
     public String getGroupNameByStudentUser(User user){
         if(user.getStatus() != null && user.getStatus() == Status.STUDENT) {
             Student student = studentRepo.findStudentByUserId(user.getId());
-            return student.getGroup().getNameGroup();
+            if (student != null) {
+                return student.getGroup().getNameGroup();
+            }
         }
         return null;
     }
@@ -358,7 +335,9 @@ public class UserService implements UserDetailsService {
     public Long getGroupByStudentUser(User user){
         if(user.getStatus() != null && user.getStatus() == Status.STUDENT) {
             Student student = studentRepo.findStudentByUserId(user.getId());
-            return student.getGroup().getId();
+            if (student != null) {
+                return student.getGroup().getId();
+            }
         }
         return null;
     }
@@ -366,7 +345,9 @@ public class UserService implements UserDetailsService {
     public List<Group> getGroupsNameByTeacherUser(User user){
         if(user.getStatus() != null && user.getStatus() == Status.TEACHER) {
             Teacher teacher = teacherRepo.findTeacherByUserId(user.getId());
-            return teacherGroupRepo.findAllGroupsByTeacherId(teacher.getId());
+            if (teacher != null) {
+                return teacherGroupRepo.findAllGroupsByTeacherId(teacher.getId());
+            }
         }
         return null;
     }
@@ -374,7 +355,9 @@ public class UserService implements UserDetailsService {
     public List<Discipline> getDisciplinesNameByTeacherUser(User user){
         if(user.getStatus() != null && user.getStatus() == Status.TEACHER) {
             Teacher teacher = teacherRepo.findTeacherByUserId(user.getId());
-            return teacherDisciplineRepo.findAllDisciplinesByTeacherId(teacher.getId());
+            if (teacher != null) {
+                return teacherDisciplineRepo.findAllDisciplinesByTeacherId(teacher.getId());
+            }
         }
         return null;
     }
@@ -382,7 +365,9 @@ public class UserService implements UserDetailsService {
     public Long getStudentTicketByUser(User user){
         if(user.getStatus() != null && user.getStatus() == Status.STUDENT) {
             Student student = studentRepo.findStudentByUserId(user.getId());
-            return student.getStudentTicket();
+            if (student != null) {
+                return student.getStudentTicket();
+            }
         }
         return null;
     }

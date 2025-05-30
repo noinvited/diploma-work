@@ -111,7 +111,7 @@ public class User implements UserDetails, Serializable {
     public int isStudent(){
         if (status == null) {
             return 0;
-        } else if ("STUDENT".equals(status)) {
+        } else if (Status.STUDENT == status) {
             return 1;
         } else {
             return 2;
