@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.journal.homework.aggregator.domain.Pair;
 import ru.journal.homework.aggregator.service.AdminService;
 
 import java.util.List;
@@ -129,11 +130,17 @@ public class AdminController {
 
     @GetMapping("editSchedule")
     public String editSchedule(@RequestParam(required = false) Long selectedGroup,
-                               Model model){
+                             @RequestParam(required = false) List<Pair> pairTimes,
+                             @RequestParam(required = false) List<String> days,
+                             @RequestParam(required = false, defaultValue = "0") Integer weekShift,
+                             Model model) {
         model.addAttribute("groups", adminService.getAllGroups());
+        model.addAttribute("weekShift", weekShift);
 
-        if (selectedGroup != null){
-
+        if (selectedGroup != null) {
+            model.addAttribute("selectedGroup", adminService.getGroup(selectedGroup));
+            model.addAttribute("pairTimes", adminService.getAllPairs());
+            model.addAttribute("days", adminService.getDateString(weekShift));
         }
 
         return "editSchedule";

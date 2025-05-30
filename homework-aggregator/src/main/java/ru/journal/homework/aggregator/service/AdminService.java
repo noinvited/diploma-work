@@ -6,13 +6,19 @@ import org.springframework.stereotype.Service;
 import ru.journal.homework.aggregator.domain.Discipline;
 import ru.journal.homework.aggregator.domain.Group;
 import ru.journal.homework.aggregator.domain.GroupDiscipline;
+import ru.journal.homework.aggregator.domain.Pair;
 import ru.journal.homework.aggregator.repo.DisciplineRepo;
 import ru.journal.homework.aggregator.repo.GroupDisciplineRepo;
 import ru.journal.homework.aggregator.repo.GroupRepo;
+import ru.journal.homework.aggregator.repo.PairRepo;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,6 +27,7 @@ public class AdminService {
     private final GroupRepo groupRepo;
     private final DisciplineRepo disciplineRepo;
     private final GroupDisciplineRepo groupDisciplineRepo;
+    private final PairRepo pairRepo;
 
     @Transactional
     public boolean updateGroup(Long groupId, List<Long> disciplineIds) {
@@ -108,4 +115,53 @@ public class AdminService {
         List<GroupDiscipline> groupDisciplines = groupDisciplineRepo.findByGroupId(groupId);
         return groupDisciplines.stream().map(GroupDiscipline::getDiscipline).toList();
     }
+
+    public List<Pair> getAllPairs(){
+        return pairRepo.findAll();
+    }
+
+    public List<String> getDateString(Integer shift){
+        LocalDate today = LocalDate.now();
+
+        // Находим понедельник текущей недели
+        LocalDate monday = today;
+        while (monday.getDayOfWeek() != DayOfWeek.MONDAY) {
+            monday = monday.minusDays(1);
+        }
+
+        // Применяем смещение в неделях
+        monday = monday.plusWeeks(shift);
+
+        DateTimeFormatter formatter = new DateTimeFormatterBuilder()
+                .appendPattern("d ")
+                .appendText(ChronoField.MONTH_OF_YEAR, new HashMap<Long, String>() {{
+                    put(1L, "января");
+                    put(2L, "февраля");
+                    put(3L, "марта");
+                    put(4L, "апреля");
+                    put(5L, "мая");
+                    put(6L, "июня");
+                    put(7L, "июля");
+                    put(8L, "августа");
+                    put(9L, "сентября");
+                    put(10L, "октября");
+                    put(11L, "ноября");
+                    put(12L, "декабря");
+                }})
+                .toFormatter(new Locale("ru"));
+
+        List<String> dates = new ArrayList<>();
+        for (int i = 0; i < 6; ++i) {
+            LocalDate date = monday.plusDays(i);
+            String dayName = date.getDayOfWeek().getDisplayName(TextStyle.FULL, new Locale("ru"));
+            dayName = dayName.substring(0, 1).toUpperCase() + dayName.substring(1);
+            String formattedDate = date.format(formatter);
+            dates.add(dayName + ", " + formattedDate);
+        }
+
+        return dates;
+    }
+
+
+
 }
