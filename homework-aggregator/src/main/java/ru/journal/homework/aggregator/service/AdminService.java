@@ -3,14 +3,8 @@ package ru.journal.homework.aggregator.service;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.journal.homework.aggregator.domain.Discipline;
-import ru.journal.homework.aggregator.domain.Group;
-import ru.journal.homework.aggregator.domain.GroupDiscipline;
-import ru.journal.homework.aggregator.domain.Pair;
-import ru.journal.homework.aggregator.repo.DisciplineRepo;
-import ru.journal.homework.aggregator.repo.GroupDisciplineRepo;
-import ru.journal.homework.aggregator.repo.GroupRepo;
-import ru.journal.homework.aggregator.repo.PairRepo;
+import ru.journal.homework.aggregator.domain.*;
+import ru.journal.homework.aggregator.repo.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -28,6 +22,7 @@ public class AdminService {
     private final DisciplineRepo disciplineRepo;
     private final GroupDisciplineRepo groupDisciplineRepo;
     private final PairRepo pairRepo;
+    private final LessonRepo lessonRepo;
 
     @Transactional
     public boolean updateGroup(Long groupId, List<Long> disciplineIds) {
@@ -120,7 +115,7 @@ public class AdminService {
         return pairRepo.findAll();
     }
 
-    public List<String> getDateString(Integer shift){
+    public List<String> getDatesString(Integer shift){
         LocalDate today = LocalDate.now();
 
         // Находим понедельник текущей недели
@@ -162,6 +157,34 @@ public class AdminService {
         return dates;
     }
 
+    public List<LocalDate> getDates(Integer shift){
+        LocalDate today = LocalDate.now();
 
+        LocalDate monday = today;
+        while (monday.getDayOfWeek() != DayOfWeek.MONDAY) {
+            monday = monday.minusDays(1);
+        }
+        monday = monday.plusWeeks(shift);
 
+        List<LocalDate> dates = new ArrayList<>();
+        for (int i = 0; i < 6; ++i) {
+            dates.add(monday.plusDays(i));
+        }
+
+        return dates;
+    }
+
+    public Map<String, Lesson> getWeekLessons(Long groupId, Integer weekShift) {
+        List<LocalDate> dates = getDates(weekShift);
+        List<Lesson> lessons = lessonRepo.findByGroupIdAndDateIn(groupId, dates);
+        
+        Map<String, Lesson> lessonMap = new HashMap<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        for (Lesson lesson : lessons) {
+            String key = lesson.getDate().format(formatter) + "_" + lesson.getPair().getId();
+            lessonMap.put(key, lesson);
+        }
+        
+        return lessonMap;
+    }
 }

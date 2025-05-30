@@ -1,0 +1,11 @@
+package ru.journal.homework.aggregator.repo;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+import ru.journal.homework.aggregator.domain.Lesson;
+
+import java.time.LocalDate;
+import java.util.List;
+
+public interface LessonRepo extends JpaRepository<Lesson, Long> {
+    List<Lesson> findByGroupIdAndDateIn(Long groupId, List<LocalDate> dates);
+} 

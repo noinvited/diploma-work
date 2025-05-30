@@ -23,15 +23,6 @@
             </form>
         </div>
     </div>
-    
-
-
-
-
-
-
-
-
 
     <#if selectedGroup??>
         <div class="card">

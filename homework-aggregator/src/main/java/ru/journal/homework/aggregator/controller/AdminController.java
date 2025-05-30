@@ -15,7 +15,6 @@ import ru.journal.homework.aggregator.service.AdminService;
 import java.util.List;
 import java.util.Map;
 
-
 @Controller
 @PreAuthorize("hasAuthority('ADMIN')")
 public class AdminController {
@@ -130,8 +129,6 @@ public class AdminController {
 
     @GetMapping("editSchedule")
     public String editSchedule(@RequestParam(required = false) Long selectedGroup,
-                             @RequestParam(required = false) List<Pair> pairTimes,
-                             @RequestParam(required = false) List<String> days,
                              @RequestParam(required = false, defaultValue = "0") Integer weekShift,
                              Model model) {
         model.addAttribute("groups", adminService.getAllGroups());
@@ -140,7 +137,7 @@ public class AdminController {
         if (selectedGroup != null) {
             model.addAttribute("selectedGroup", adminService.getGroup(selectedGroup));
             model.addAttribute("pairTimes", adminService.getAllPairs());
-            model.addAttribute("days", adminService.getDateString(weekShift));
+            model.addAttribute("days", adminService.getDatesString(weekShift));
         }
 
         return "editSchedule";
