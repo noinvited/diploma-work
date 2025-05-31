@@ -157,4 +157,11 @@ public class AdminController {
         adminService.createLesson(request);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping("/lessons/{id}")
+    public ResponseEntity<?> updateLesson(@PathVariable Long id, @RequestBody LessonRequestDto request) {
+        request.setId(id);
+        adminService.updateLesson(request);
+        return ResponseEntity.ok().build();
+    }
 }

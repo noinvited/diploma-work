@@ -233,4 +233,39 @@ public class AdminService {
         // Сохранение пары
         lessonRepo.save(lesson);
     }
+
+    @Transactional
+    public void updateLesson(LessonRequestDto request) {
+        Lesson lesson = lessonRepo.findById(request.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Lesson not found"));
+
+        // Установка даты
+        lesson.setDate(LocalDate.parse(request.getDate()));
+
+        // Установка номера пары
+        lesson.setPair(pairRepo.findById(request.getPairId())
+                .orElseThrow(() -> new IllegalArgumentException("Pair not found")));
+
+        // Установка группы
+        lesson.setGroup(groupRepo.findById(request.getGroupId())
+                .orElseThrow(() -> new IllegalArgumentException("Group not found")));
+
+        // Установка преподавателя
+        lesson.setTeacher(teacherRepo.findById(request.getTeacherId())
+                .orElseThrow(() -> new IllegalArgumentException("Teacher not found")));
+
+        // Установка дисциплины
+        lesson.setDiscipline(disciplineRepo.findById(request.getDisciplineId())
+                .orElseThrow(() -> new IllegalArgumentException("Discipline not found")));
+
+        // Установка аудитории
+        lesson.setClassroom(request.getClassroom());
+
+        // Установка типа занятия
+        lesson.setLessonType(lessonTypeRepo.findById(request.getLessonTypeId())
+                .orElseThrow(() -> new IllegalArgumentException("Lesson type not found")));
+
+        // Сохранение обновленной пары
+        lessonRepo.save(lesson);
+    }
 }
