@@ -72,7 +72,7 @@
                                                         <h6 class="card-title mb-1">${lesson.discipline.nameDiscipline}</h6>
                                                         <p class="card-text mb-1">
                                                             <small>
-                                                                <i class="bi bi-person"></i> ${lesson.teacher.user.username}<br>
+                                                                <i class="bi bi-person"></i> ${lesson.teacher.user.fio!lesson.teacher.user.username}<br>
                                                                 <i class="bi bi-geo-alt"></i> ${lesson.classroom!''}<br>
                                                                 <#if lesson.lessonType??><i class="bi bi-journal-text"></i> ${lesson.lessonType.type}</#if>
                                                             </small>
@@ -83,12 +83,16 @@
                                                                     data-bs-target="#editLessonModal"
                                                                     data-lesson-id="${lesson.id}"
                                                                     data-day="${date}"
-                                                                    data-pair="${pair.id}">
-                                                                <i class="bi bi-pencil"></i>
+                                                                    data-pair="${pair.id}"
+                                                                    data-discipline-id="${lesson.discipline.id}"
+                                                                    data-teacher-id="${lesson.teacher.id}"
+                                                                    data-classroom="${lesson.classroom!''}"
+                                                                    data-lesson-type-id="${(lesson.lessonType.id)!}">
+                                                                <i class="bi bi-pencil"></i> Редактировать
                                                             </button>
                                                             <button type="button" class="btn btn-outline-danger"
                                                                     onclick="deleteLesson(${lesson.id})">
-                                                                <i class="bi bi-trash"></i>
+                                                                <i class="bi bi-trash"></i> Удалить
                                                             </button>
                                                         </div>
                                                     </div>
@@ -216,7 +220,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                        <button type="button" class="btn btn-primary" onclick="updateLesson()">Сохранить</button>
+                        <button type="button" class="btn btn-primary" onclick="updateLesson()">Сохранить изменения</button>
                     </div>
                 </div>
             </div>
@@ -379,6 +383,185 @@
             document.getElementById('selectedGroup').addEventListener('change', function() {
                 this.form.submit();
             });
+
+            // Обработка открытия модального окна редактирования
+            const editLessonModal = document.getElementById('editLessonModal');
+            editLessonModal.addEventListener('show.bs.modal', function (event) {
+                const button = event.relatedTarget;
+                
+                // Заполняем скрытые поля
+                document.getElementById('editLessonId').value = button.getAttribute('data-lesson-id');
+                document.getElementById('editDayOfWeek').value = button.getAttribute('data-day');
+                document.getElementById('editPairNumber').value = button.getAttribute('data-pair');
+                
+                // Заполняем выбор дисциплины
+                const disciplineId = button.getAttribute('data-discipline-id');
+                const disciplineSelect = document.getElementById('editDiscipline');
+                disciplineSelect.value = disciplineId;
+                
+                // Загружаем преподавателей для выбранной дисциплины
+                const teacherId = button.getAttribute('data-teacher-id');
+                if (disciplineId) {
+                    fetch('/discipline/' + disciplineId + '/teachers')
+                        .then(response => response.json())
+                        .then(teachers => {
+                            const teacherSelect = document.getElementById('editTeacher');
+                            teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
+                            if (teachers && teachers.length > 0) {
+                                teachers.forEach(teacher => {
+                                    const option = document.createElement('option');
+                                    option.value = teacher.id;
+                                    option.textContent = teacher.user.fio || teacher.user.username;
+                                    teacherSelect.appendChild(option);
+                                });
+                                teacherSelect.value = teacherId;
+                                teacherSelect.disabled = false;
+                            }
+                        });
+                }
+                
+                // Заполняем аудиторию
+                document.getElementById('editClassroom').value = button.getAttribute('data-classroom');
+                
+                // Заполняем тип занятия
+                const lessonTypeId = button.getAttribute('data-lesson-type-id');
+                if (lessonTypeId) {
+                    document.getElementById('editLessonType').value = lessonTypeId;
+                }
+            });
+
+            // Обработчик изменения дисциплины в форме редактирования
+            document.getElementById('editDiscipline').addEventListener('change', function() {
+                const disciplineId = this.value;
+                const teacherSelect = document.getElementById('editTeacher');
+                
+                if (disciplineId) {
+                    teacherSelect.disabled = true;
+                    teacherSelect.innerHTML = '<option value="">Загрузка преподавателей...</option>';
+                    
+                    fetch('/discipline/' + disciplineId + '/teachers')
+                        .then(response => response.json())
+                        .then(teachers => {
+                            teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
+                            if (teachers && teachers.length > 0) {
+                                teachers.forEach(teacher => {
+                                    const option = document.createElement('option');
+                                    option.value = teacher.id;
+                                    option.textContent = teacher.user.fio || teacher.user.username;
+                                    teacherSelect.appendChild(option);
+                                });
+                                teacherSelect.disabled = false;
+                            } else {
+                                teacherSelect.innerHTML = '<option value="">Нет доступных преподавателей</option>';
+                                teacherSelect.disabled = true;
+                            }
+                        })
+                        .catch(error => {
+                            teacherSelect.innerHTML = '<option value="">Ошибка загрузки преподавателей</option>';
+                            teacherSelect.disabled = true;
+                        });
+                } else {
+                    teacherSelect.innerHTML = '<option value="">Сначала выберите дисциплину</option>';
+                    teacherSelect.disabled = true;
+                }
+            });
+
+            // Функция обновления пары
+            function updateLesson() {
+                const form = document.getElementById('editLessonForm');
+                const discipline = document.getElementById('editDiscipline');
+                const teacher = document.getElementById('editTeacher');
+                const classroom = document.getElementById('editClassroom');
+                const lessonType = document.getElementById('editLessonType');
+                const lessonId = document.getElementById('editLessonId');
+
+                // Очистка предыдущих сообщений об ошибках
+                clearEditValidationErrors();
+
+                // Проверка обязательных полей
+                let isValid = true;
+
+                if (!discipline.value) {
+                    showEditError(discipline, 'Выберите дисциплину');
+                    isValid = false;
+                }
+
+                if (!teacher.value) {
+                    showEditError(teacher, 'Выберите преподавателя');
+                    isValid = false;
+                }
+
+                if (!classroom.value.trim()) {
+                    showEditError(classroom, 'Укажите аудиторию');
+                    isValid = false;
+                }
+
+                if (!lessonType.value) {
+                    showEditError(lessonType, 'Выберите тип занятия');
+                    isValid = false;
+                }
+
+                if (isValid && form.checkValidity()) {
+                    const formData = new FormData(form);
+                    const lessonData = {
+                        id: lessonId.value,
+                        date: formData.get('dayOfWeek'),
+                        pairId: formData.get('pairNumber'),
+                        groupId: ${selectedGroup.id},
+                        disciplineId: formData.get('discipline'),
+                        teacherId: formData.get('teacher'),
+                        classroom: formData.get('classroom').trim(),
+                        lessonTypeId: formData.get('lessonType')
+                    };
+
+                    fetch('/lessons/' + lessonId.value, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(lessonData)
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            const modal = bootstrap.Modal.getInstance(editLessonModal);
+                            modal.hide();
+                            window.location.reload();
+                        } else {
+                            throw new Error('Не удалось обновить пару');
+                        }
+                    })
+                    .catch(error => {
+                        showEditModalError('Произошла ошибка при обновлении пары');
+                    });
+                }
+            }
+
+            // Вспомогательные функции для валидации формы редактирования
+            function showEditError(element, message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                errorDiv.textContent = message;
+                element.classList.add('is-invalid');
+                element.parentElement.appendChild(errorDiv);
+            }
+
+            function clearEditValidationErrors() {
+                const form = document.getElementById('editLessonForm');
+                form.querySelectorAll('.is-invalid').forEach(element => {
+                    element.classList.remove('is-invalid');
+                });
+                form.querySelectorAll('.invalid-feedback').forEach(element => {
+                    element.remove();
+                });
+            }
+
+            function showEditModalError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger mt-3';
+                errorDiv.textContent = message;
+                document.querySelector('#editLessonForm').prepend(errorDiv);
+                setTimeout(() => errorDiv.remove(), 5000);
+            }
         </script>
     </#if>
 </@c.page>
