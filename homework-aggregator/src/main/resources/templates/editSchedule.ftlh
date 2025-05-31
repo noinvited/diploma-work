@@ -326,7 +326,7 @@
                         lessonTypeId: formData.get('lessonType')
                     };
 
-                    fetch('/api/lessons', {
+                    fetch('/lessons', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

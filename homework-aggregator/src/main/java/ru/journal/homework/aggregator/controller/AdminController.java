@@ -1,16 +1,14 @@
 package ru.journal.homework.aggregator.controller;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.journal.homework.aggregator.domain.Teacher;
+import ru.journal.homework.aggregator.domain.dto.LessonRequestDto;
 import ru.journal.homework.aggregator.service.AdminService;
 
 import java.util.List;
@@ -154,20 +152,9 @@ public class AdminController {
         return adminService.getTeachersByDiscipline(disciplineId);
     }
 
-    /*@PostMapping("/lessons")
-    public ResponseEntity<?> createLesson(@RequestBody LessonRequest request) {
+    @PostMapping("/lessons")
+    public ResponseEntity<?> createLesson(@RequestBody LessonRequestDto request) {
         adminService.createLesson(request);
         return ResponseEntity.ok().build();
     }
-
-    class LessonRequest {
-    private String date;
-    private Long pairId;
-    private Long groupId;
-    private Long disciplineId;
-    private Long teacherId;
-    private String classroom;
-    private Long lessonTypeId;
-    }
-    */
 }

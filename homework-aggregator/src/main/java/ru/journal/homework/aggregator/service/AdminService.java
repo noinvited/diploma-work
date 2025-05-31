@@ -4,6 +4,7 @@ import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.journal.homework.aggregator.domain.*;
+import ru.journal.homework.aggregator.domain.dto.LessonRequestDto;
 import ru.journal.homework.aggregator.repo.*;
 
 import java.time.DayOfWeek;
@@ -199,20 +200,37 @@ public class AdminService {
         return teacherDisciplineRepo.findTeachersByDisciplineId(disciplineId);
     }
 
-    /*@Transactional
-    public void createLesson(LessonRequest request) {
+    @Transactional
+    public void createLesson(LessonRequestDto request) {
         Lesson lesson = new Lesson();
+        
+        // Установка даты
         lesson.setDate(LocalDate.parse(request.getDate()));
-        lesson.setPair(pairRepo.findById(request.getPairId()).orElseThrow());
-        lesson.setGroup(groupRepo.findById(request.getGroupId()).orElseThrow());
-        lesson.setTeacher(teacherRepo.findById(request.getTeacherId()).orElseThrow());
-        lesson.setDiscipline(disciplineRepo.findById(request.getDisciplineId()).orElseThrow());
+        
+        // Установка номера пары
+        lesson.setPair(pairRepo.findById(request.getPairId())
+                .orElseThrow(() -> new IllegalArgumentException("Pair not found")));
+        
+        // Установка группы
+        lesson.setGroup(groupRepo.findById(request.getGroupId())
+                .orElseThrow(() -> new IllegalArgumentException("Group not found")));
+        
+        // Установка преподавателя
+        lesson.setTeacher(teacherRepo.findById(request.getTeacherId())
+                .orElseThrow(() -> new IllegalArgumentException("Teacher not found")));
+        
+        // Установка дисциплины
+        lesson.setDiscipline(disciplineRepo.findById(request.getDisciplineId())
+                .orElseThrow(() -> new IllegalArgumentException("Discipline not found")));
+        
+        // Установка аудитории
         lesson.setClassroom(request.getClassroom());
         
-        if (request.getLessonTypeId() != null) {
-            lesson.setLessonType(lessonTypeRepo.findById(request.getLessonTypeId()).orElse(null));
-        }
-        
+        // Установка типа занятия
+        lesson.setLessonType(lessonTypeRepo.findById(request.getLessonTypeId())
+                .orElseThrow(() -> new IllegalArgumentException("Lesson type not found")));
+
+        // Сохранение пары
         lessonRepo.save(lesson);
-    }*/
+    }
 }
