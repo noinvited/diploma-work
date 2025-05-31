@@ -1,5 +1,6 @@
 package ru.journal.homework.aggregator.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -24,6 +25,7 @@ import java.util.Collections;
 @Table(name = "users", schema = "public", uniqueConstraints = {
         @UniqueConstraint(name = "users_login_key", columnNames = {"login"})
 })
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler", "password", "authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
 public class User implements UserDetails, Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

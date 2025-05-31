@@ -150,7 +150,7 @@
 
                             <div class="mb-3">
                                 <label for="lessonType" class="form-label">Тип занятия</label>
-                                <select class="form-select" id="lessonType" name="lessonType">
+                                <select class="form-select" id="lessonType" name="lessonType" required>
                                     <option value="">Выберите тип занятия</option>
                                     <#list lessonTypes as type>
                                         <option value="${type.id}">${type.type}</option>
@@ -233,7 +233,8 @@
                 document.getElementById('dayOfWeek').value = day;
                 document.getElementById('pairNumber').value = pair;
 
-                // Сброс формы
+                // Сброс формы и ошибок
+                clearValidationErrors();
                 document.getElementById('discipline').value = '';
                 const teacherSelect = document.getElementById('teacher');
                 teacherSelect.value = '';
@@ -255,15 +256,12 @@
                     fetch('/discipline/' + disciplineId + '/teachers')
                         .then(response => response.json())
                         .then(teachers => {
-
-                            console.log('Получены преподаватели:', teachers);
-                            
                             teacherSelect.innerHTML = '<option value="">Выберите преподавателя</option>';
                             if (teachers && teachers.length > 0) {
                                 teachers.forEach(teacher => {
                                     const option = document.createElement('option');
                                     option.value = teacher.id;
-                                    option.textContent = teacher.user.username;
+                                    option.textContent = teacher.user.fio || teacher.user.username;
                                     teacherSelect.appendChild(option);
                                 });
                                 teacherSelect.disabled = false;
@@ -273,9 +271,6 @@
                             }
                         })
                         .catch(error => {
-                            
-                            console.error('Ошибка при загрузке преподавателей:', error);
-
                             teacherSelect.innerHTML = '<option value="">Ошибка загрузки преподавателей</option>';
                             teacherSelect.disabled = true;
                         });
@@ -288,7 +283,38 @@
             // Функция сохранения пары
             function saveLessonToSchedule() {
                 const form = document.getElementById('addLessonForm');
-                if (form.checkValidity()) {
+                const discipline = document.getElementById('discipline');
+                const teacher = document.getElementById('teacher');
+                const classroom = document.getElementById('classroom');
+                const lessonType = document.getElementById('lessonType');
+
+                // Очистка предыдущих сообщений об ошибках
+                clearValidationErrors();
+
+                // Проверка обязательных полей
+                let isValid = true;
+
+                if (!discipline.value) {
+                    showError(discipline, 'Выберите дисциплину');
+                    isValid = false;
+                }
+
+                if (!teacher.value) {
+                    showError(teacher, 'Выберите преподавателя');
+                    isValid = false;
+                }
+
+                if (!classroom.value.trim()) {
+                    showError(classroom, 'Укажите аудиторию');
+                    isValid = false;
+                }
+
+                if (!lessonType.value) {
+                    showError(lessonType, 'Выберите тип занятия');
+                    isValid = false;
+                }
+
+                if (isValid && form.checkValidity()) {
                     const formData = new FormData(form);
                     const lessonData = {
                         date: formData.get('dayOfWeek'),
@@ -296,8 +322,8 @@
                         groupId: ${selectedGroup.id},
                         disciplineId: formData.get('discipline'),
                         teacherId: formData.get('teacher'),
-                        classroom: formData.get('classroom'),
-                        lessonTypeId: formData.get('lessonType') || null
+                        classroom: formData.get('classroom').trim(),
+                        lessonTypeId: formData.get('lessonType')
                     };
 
                     fetch('/api/lessons', {
@@ -317,12 +343,36 @@
                         }
                     })
                     .catch(error => {
-                        console.error('Ошибка:', error);
-                        alert('Произошла ошибка при сохранении пары');
+                        showModalError('Произошла ошибка при сохранении пары');
                     });
-                } else {
-                    form.reportValidity();
                 }
+            }
+
+            // Вспомогательные функции для валидации
+            function showError(element, message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                errorDiv.textContent = message;
+                element.classList.add('is-invalid');
+                element.parentElement.appendChild(errorDiv);
+            }
+
+            function clearValidationErrors() {
+                const form = document.getElementById('addLessonForm');
+                form.querySelectorAll('.is-invalid').forEach(element => {
+                    element.classList.remove('is-invalid');
+                });
+                form.querySelectorAll('.invalid-feedback').forEach(element => {
+                    element.remove();
+                });
+            }
+
+            function showModalError(message) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'alert alert-danger mt-3';
+                errorDiv.textContent = message;
+                document.querySelector('#addLessonForm').prepend(errorDiv);
+                setTimeout(() => errorDiv.remove(), 5000);
             }
 
             // Автоматическая отправка формы при выборе группы
