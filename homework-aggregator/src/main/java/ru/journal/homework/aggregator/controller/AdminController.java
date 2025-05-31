@@ -164,4 +164,10 @@ public class AdminController {
         adminService.updateLesson(request);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/lessons/{id}")
+    public ResponseEntity<?> deleteLesson(@PathVariable Long id) {
+        adminService.deleteLesson(id);
+        return ResponseEntity.ok().build();
+    }
 }

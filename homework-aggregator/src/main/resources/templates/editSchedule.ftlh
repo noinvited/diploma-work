@@ -562,6 +562,25 @@
                 document.querySelector('#editLessonForm').prepend(errorDiv);
                 setTimeout(() => errorDiv.remove(), 5000);
             }
+
+            // Функция удаления пары
+            function deleteLesson(lessonId) {
+                if (confirm('Вы уверены, что хотите удалить эту пару?')) {
+                    fetch('/lessons/' + lessonId, {
+                        method: 'DELETE'
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            window.location.reload();
+                        } else {
+                            throw new Error('Не удалось удалить пару');
+                        }
+                    })
+                    .catch(error => {
+                        alert('Произошла ошибка при удалении пары');
+                    });
+                }
+            }
         </script>
     </#if>
 </@c.page>

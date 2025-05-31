@@ -268,4 +268,12 @@ public class AdminService {
         // Сохранение обновленной пары
         lessonRepo.save(lesson);
     }
+
+    @Transactional
+    public void deleteLesson(Long id) {
+        if (!lessonRepo.existsById(id)) {
+            throw new IllegalArgumentException("Lesson not found");
+        }
+        lessonRepo.deleteById(id);
+    }
 }
