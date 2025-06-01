@@ -50,7 +50,7 @@
                                                     <h6 class="card-title mb-1">${lesson.discipline.nameDiscipline}</h6>
                                                     <p class="card-text mb-1">
                                                         <small>
-                                                            <i class="bi bi-person"></i> ${lesson.teacher.user.fio!lesson.teacher.user.username}<br>
+                                                            <i class="bi bi-people"></i> Группа: ${lesson.group.nameGroup}<br>
                                                             <i class="bi bi-geo-alt"></i> ${lesson.classroom!''}<br>
                                                             <#if lesson.lessonType??><i class="bi bi-journal-text"></i> ${lesson.lessonType.type}</#if>
                                                         </small>
