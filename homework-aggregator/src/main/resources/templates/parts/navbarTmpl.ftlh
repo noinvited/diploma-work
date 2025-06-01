@@ -15,7 +15,7 @@
                 <#if known>
                     <#if !isAdmin>
                         <li class="nav-item">
-                            <a class="nav-link" href="/schedule">Расписание</a>
+                            <a class="nav-link" <#if isStudent == 1> href="/studentSchedule" <#else> href="/teacherSchedule"</#if>>Расписание</a>
                         </li>
                         <#if isStudent != 0>
                             <#if isStudent == 1>

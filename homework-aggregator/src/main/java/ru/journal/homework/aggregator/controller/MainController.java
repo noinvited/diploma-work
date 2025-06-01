@@ -13,9 +13,15 @@ public class MainController {
         return "greeting";
     }
 
-    @GetMapping("/schedule")
+    @GetMapping("/studentSchedule")
     @PreAuthorize("hasAuthority('USER')")
-    public String schedule(Map<String, Object> model) {
-        return "schedule";
+    public String studentSchedule(Map<String, Object> model) {
+        return "studentSchedule";
+    }
+
+    @GetMapping("/teacherSchedule")
+    @PreAuthorize("hasAuthority('USER')")
+    public String teacherSchedule(Map<String, Object> model) {
+        return "teacherSchedule";
     }
 }

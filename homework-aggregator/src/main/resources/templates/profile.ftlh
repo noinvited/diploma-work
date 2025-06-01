@@ -2,7 +2,7 @@
 <#include "parts/securityHlpr.ftlh">
 
 <@c.page>
-    <a class="btn btn-outline-primary mb-3" <#if !isAdmin> href="/schedule" <#else>  href="/"</#if>>
+    <a class="btn btn-outline-primary mb-3" <#if !isAdmin> <#if isStudent == 1> href="/studentSchedule"<#else> href="/teacherSchedule"</#if> <#else>  href="/"</#if>>
         <#if !isAdmin>Вернуться к расписанию<#else>Вернуться в главное меню</#if>
     </a>
     <h4 class="m-3">${user.username}</h4>

@@ -9,9 +9,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.configurers.LogoutConfigurer;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import ru.journal.homework.aggregator.domain.User;
+import ru.journal.homework.aggregator.domain.helperEntity.Role;
+import ru.journal.homework.aggregator.domain.helperEntity.Status;
 
 @Configuration
 @EnableWebSecurity
@@ -34,11 +38,15 @@ public class WebSecurityConfig {
                 .formLogin((form) -> form
                         .loginPage("/login")
                         .successHandler((request, response, authentication) -> {
-                            if (authentication.getAuthorities().stream()
-                                    .anyMatch(a -> a.getAuthority().equals("ADMIN"))) {
+                            User user = (User) authentication.getPrincipal();
+                            if (user.getRole().equals(Role.ADMIN)) {
                                 response.sendRedirect("/");
+                            } else if (user.getStatus() != null && user.getStatus() == Status.TEACHER) {
+                                response.sendRedirect("/teacherSchedule");
+                            } else if (user.getStatus() != null && user.getStatus() == Status.STUDENT) {
+                                response.sendRedirect("/studentSchedule");
                             } else {
-                                response.sendRedirect("/schedule");
+                                response.sendRedirect("/");
                             }
                         })
                 )
@@ -46,7 +54,14 @@ public class WebSecurityConfig {
                 .exceptionHandling(configurer ->
                         configurer.accessDeniedHandler(
                                 (request, response, accessDeniedException) -> {
-                                    response.sendRedirect("/schedule");
+                                    User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                                    if (user.getStatus() != null && user.getStatus() == Status.TEACHER) {
+                                        response.sendRedirect("/teacherSchedule");
+                                    } else if (user.getStatus() != null && user.getStatus() == Status.STUDENT) {
+                                        response.sendRedirect("/studentSchedule");
+                                    } else {
+                                        response.sendRedirect("/");
+                                    }
                                 }))
                 .logout(LogoutConfigurer::permitAll)
                 .csrf(AbstractHttpConfigurer::disable)
