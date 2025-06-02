@@ -69,10 +69,11 @@
                                                         </small>
                                                     </p>
                                                     <#if lessonMessages[lessonKey]??>
-                                                        <button type="button" class="btn btn-sm btn-info mt-1" 
+                                                        <button type="button" class="btn btn-sm btn-outline-primary mt-1" 
                                                                 data-bs-toggle="modal" 
                                                                 data-bs-target="#viewMessageModal"
                                                                 data-lesson-id="${lesson.id}"
+                                                                data-lesson-key="${lessonKey}"
                                                                 data-discipline="${lesson.discipline.nameDiscipline}"
                                                                 data-group="${lesson.group.nameGroup}"
                                                                 data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}">
@@ -162,38 +163,31 @@
                         </div>
                         <div id="messagesList">
                             <#list lessonMessages as key, message>
-                                <#if key == lessonKey>
-                                    <div class="card mb-3">
-                                        <div class="card-body">
-                                            <p class="card-text">${message.textMessage}</p>
-                                            <#if message.file??>
-                                                <p class="mb-1"><strong>Прикрепленные файлы:</strong></p>
-                                                <#list message.file?split(";") as fileName>
-                                                    <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary mb-1">
-                                                        <i class="bi bi-download"></i> Скачать файл ${fileName?keep_after("/")}
-                                                    </a>
-                                                </#list>
-                                            </#if>
-                                            <#if message.needToPerform>
-                                                <div class="mt-2">
-                                                    <span class="badge bg-warning text-dark">
-                                                        <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
+                                <div class="card mb-3 message-card" data-message-key="${key}" style="display: none;">
+                                    <div class="card-body">
+                                        <p class="card-text">${message.textMessage}</p>
+                                        <#if message.file?? && message.file?has_content>
+                                            <p class="mb-1"><strong>Прикрепленные файлы:</strong></p>
+                                            <#list message.file?split(";") as fileName>
+                                                <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary mb-1">
+                                                    <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
+                                                </a>
+                                            </#list>
+                                        </#if>
+                                        <#if message.needToPerform>
+                                            <div class="mt-2">
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
+                                                </span>
+                                                <#if message.formattedDeadline??>
+                                                    <span class="badge bg-info">
+                                                        <i class="bi bi-clock"></i> Срок: ${message.formattedDeadline}
                                                     </span>
-                                                    <#if message.deadline??>
-                                                        <span class="badge bg-info">
-                                                            <i class="bi bi-clock"></i> Срок: ${message.deadline?string('dd.MM.yyyy HH:mm')}
-                                                        </span>
-                                                    </#if>
-                                                    <#if message.statusTask??>
-                                                        <span class="badge bg-secondary">
-                                                            <i class="bi bi-check2-circle"></i> Статус: ${message.statusTask.status}
-                                                        </span>
-                                                    </#if>
-                                                </div>
-                                            </#if>
-                                        </div>
+                                                </#if>
+                                            </div>
+                                        </#if>
                                     </div>
-                                </#if>
+                                </div>
                             </#list>
                         </div>
                     </div>
@@ -226,10 +220,21 @@
                     const discipline = button.getAttribute('data-discipline');
                     const group = button.getAttribute('data-group');
                     const date = button.getAttribute('data-date');
+                    const lessonKey = button.getAttribute('data-lesson-key');
 
                     document.getElementById('viewModalDiscipline').textContent = discipline;
                     document.getElementById('viewModalGroup').textContent = group;
                     document.getElementById('viewModalDate').textContent = date;
+
+                    // Скрыть все карточки сообщений
+                    document.querySelectorAll('.message-card').forEach(card => {
+                        const cardKey = card.getAttribute('data-message-key');
+                        if (cardKey === lessonKey) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
                 });
             });
         </script>

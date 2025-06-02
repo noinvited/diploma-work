@@ -9,6 +9,9 @@ import org.hibernate.annotations.ColumnDefault;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 
 @Getter
 @Setter
@@ -45,4 +48,12 @@ public class LessonMessage implements Serializable {
     @JoinColumn(name = "status_task_id")
     private StatusTask statusTask;
 
+    public String getFormattedDeadline() {
+        if (deadline == null) {
+            return null;
+        }
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(deadline, ZoneId.systemDefault());
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+        return localDateTime.format(formatter);
+    }
 }

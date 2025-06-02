@@ -13,6 +13,8 @@ import java.nio.file.Paths;
 import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
@@ -136,16 +138,23 @@ public class TeacherService {
 
     public Integer saveLessonMessage(User user, Long lessonId, String textMessage,
                                      MultipartFile[] files, Boolean needToPerform,
-                                     Instant deadline) throws IOException {
+                                     String deadlineStr) throws IOException {
 
-        // Проверка даты сдачи для обязательных работ
+        // Преобразование строки даты в Instant
+        Instant deadline = null;
         if (needToPerform) {
-            if (deadline == null) {
+            if (deadlineStr == null || deadlineStr.isEmpty()) {
                 return 2; // Ошибка: для обязательной работы необходимо указать срок сдачи
             }
+        }
+
+        try {
+            deadline = LocalDateTime.parse(deadlineStr).atZone(ZoneId.systemDefault()).toInstant();
             if (!deadline.isAfter(Instant.now())) {
                 return 1; // Ошибка: дата сдачи должна быть позже текущего момента
             }
+        } catch (Exception e) {
+            return 3; // Ошибка: некорректный формат даты
         }
 
         LessonMessage message = new LessonMessage();
@@ -201,24 +210,21 @@ public class TeacherService {
                 Files.createDirectories(lessonDir);
             }
 
-            // Генерируем уникальное имя файла
             String originalFilename = file.getOriginalFilename();
-            String extension = getFileExtension(originalFilename);
-            String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
+            Path filePath = lessonDir.resolve(originalFilename);
+            
+            // Если файл с таким именем уже существует, добавляем уникальный префикс
+            if (Files.exists(filePath)) {
+                String nameWithoutExt = originalFilename.substring(0, originalFilename.lastIndexOf('.'));
+                String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+                originalFilename = nameWithoutExt + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
+                filePath = lessonDir.resolve(originalFilename);
+            }
 
-            // Сохраняем файл
-            Path filePath = lessonDir.resolve(uniqueFilename);
             Files.copy(file.getInputStream(), filePath);
 
-            return lessonId + "/teacher/" + uniqueFilename;
+            return lessonId + "/teacher/" + originalFilename;
         }
         return null;
-    }
-
-    private String getFileExtension(String filename) {
-        if (filename != null && filename.lastIndexOf(".") != -1) {
-            return filename.substring(filename.lastIndexOf(".") + 1);
-        }
-        return "";
     }
 }
