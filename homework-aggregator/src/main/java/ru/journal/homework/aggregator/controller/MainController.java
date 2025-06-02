@@ -139,6 +139,34 @@ public class MainController {
         return "redirect:/teacherSchedule?weekShift=" + weekShift;
     }
 
+    @PostMapping("/deleteLessonMessage")
+    @PreAuthorize("hasAuthority('USER')")
+    public String deleteLessonMessage(
+            @AuthenticationPrincipal User user,
+            @RequestParam("messageId") Long messageId,
+            @RequestParam(value = "weekShift", required = false, defaultValue = "0") Integer weekShift,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            Teacher teacher = teacherService.getTeacher(user);
+            if (teacher == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Только преподаватель может удалять сообщения");
+                return "redirect:/studentSchedule";
+            }
+
+            boolean deleted = teacherService.deleteLessonMessage(messageId, teacher.getId());
+            if (deleted) {
+                redirectAttributes.addFlashAttribute("successMessage", "Сообщение успешно удалено");
+            } else {
+                redirectAttributes.addFlashAttribute("errorMessage", "Вы можете удалять только свои сообщения");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при удалении сообщения: " + e.getMessage());
+        }
+
+        return "redirect:/teacherSchedule?weekShift=" + weekShift;
+    }
+
     @GetMapping("/files/{lessonId}/teacher/{filename:.+}")
     @ResponseBody
     @PreAuthorize("hasAuthority('USER')")

@@ -186,6 +186,22 @@
                                                 </#if>
                                             </div>
                                         </#if>
+                                        <div class="mt-3">
+                                            <button type="button" class="btn btn-primary" 
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#editMessageModal"
+                                                    data-message-id="${message.id}"
+                                                    data-text="${message.textMessage}"
+                                                    data-need-perform="${message.needToPerform?string}"
+                                                    data-deadline="${message.deadline!''}"
+                                                    onclick="prepareEditForm(this)">
+                                                <i class="bi bi-pencil"></i> Редактировать
+                                            </button>
+                                            <button type="button" class="btn btn-danger" 
+                                                    onclick="deleteMessage(${message.id})">
+                                                <i class="bi bi-trash"></i> Удалить
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </#list>
@@ -194,6 +210,45 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для редактирования сообщения -->
+        <div class="modal fade" id="editMessageModal" tabindex="-1" aria-labelledby="editMessageModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="editMessageForm" action="/editLessonMessage" method="POST" enctype="multipart/form-data">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editMessageModalLabel">Редактировать сообщение</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="editMessageId" name="messageId">
+                            <input type="hidden" id="editWeekShift" name="weekShift" value="${weekShift}">
+                            <div class="mb-3">
+                                <label for="editMessageText" class="form-label">Текст сообщения</label>
+                                <textarea class="form-control" id="editMessageText" name="textMessage" rows="3" maxlength="2048" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editFile" class="form-label">Файлы</label>
+                                <input type="file" class="form-control" id="editFile" name="file" multiple>
+                                <div class="form-text">Максимальный размер файла: 10 МБ</div>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="editNeedToPerform" name="needToPerform">
+                                <label class="form-check-label" for="editNeedToPerform">Требуется выполнение</label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editDeadline" class="form-label">Срок выполнения</label>
+                                <input type="datetime-local" class="form-control" id="editDeadline" name="deadline">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
@@ -237,6 +292,48 @@
                     });
                 });
             });
+
+            function prepareEditForm(button) {
+                const messageId = button.getAttribute('data-message-id');
+                const text = button.getAttribute('data-text');
+                const needPerform = button.getAttribute('data-need-perform') === 'true';
+                const deadline = button.getAttribute('data-deadline');
+
+                document.getElementById('editMessageId').value = messageId;
+                document.getElementById('editMessageText').value = text;
+                document.getElementById('editNeedToPerform').checked = needPerform;
+                
+                if (deadline) {
+                    const deadlineDate = new Date(deadline);
+                    const formattedDeadline = deadlineDate.toISOString().slice(0, 16);
+                    document.getElementById('editDeadline').value = formattedDeadline;
+                } else {
+                    document.getElementById('editDeadline').value = '';
+                }
+            }
+
+            function deleteMessage(messageId) {
+                if (confirm('Вы уверены, что хотите удалить это сообщение?')) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/deleteLessonMessage';
+
+                    const messageIdInput = document.createElement('input');
+                    messageIdInput.type = 'hidden';
+                    messageIdInput.name = 'messageId';
+                    messageIdInput.value = messageId;
+                    form.appendChild(messageIdInput);
+
+                    const weekShiftInput = document.createElement('input');
+                    weekShiftInput.type = 'hidden';
+                    weekShiftInput.name = 'weekShift';
+                    weekShiftInput.value = '${weekShift}';
+                    form.appendChild(weekShiftInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            }
         </script>
     </#if>
 </@c.page>

@@ -20,6 +20,7 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TeacherService {
@@ -226,5 +227,41 @@ public class TeacherService {
             return lessonId + "/teacher/" + originalFilename;
         }
         return null;
+    }
+
+    @Transactional
+    public boolean deleteLessonMessage(Long messageId, Long teacherId) {
+        Optional<LessonMessage> messageOpt = lessonMessageRepo.findById(messageId);
+        if (messageOpt.isEmpty()) {
+            return false;
+        }
+
+        LessonMessage message = messageOpt.get();
+        if (!message.getLessons().getTeacher().getId().equals(teacherId)) {
+            return false;
+        }
+
+        // Удаляем связанное задание, если оно есть
+        Task task = taskRepo.findByLessonMessageId(messageId);
+        if (task != null) {
+            taskRepo.delete(task);
+        }
+
+        // Удаляем файлы, если они есть
+        if (message.getFile() != null && !message.getFile().isEmpty()) {
+            String[] files = message.getFile().split(";");
+            for (String filePath : files) {
+                try {
+                    Path path = Paths.get(uploadPath, filePath);
+                    Files.deleteIfExists(path);
+                } catch (IOException e) {
+                    // Логируем ошибку, но продолжаем удаление
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        lessonMessageRepo.delete(message);
+        return true;
     }
 }
