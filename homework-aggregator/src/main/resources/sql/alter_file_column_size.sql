@@ -1,0 +1,1 @@
+ALTER TABLE lesson_message ALTER COLUMN file TYPE VARCHAR(2048);

@@ -30,7 +30,7 @@ public class LessonMessage implements Serializable {
     @Column(name = "text_message", length = 2048)
     private String textMessage;
 
-    @Size(max = 255)
+    @Size(max = 2048)
     @Column(name = "file")
     private String file;
 

@@ -5,6 +5,19 @@
     <#if isStudent == 0>
         <h4>Для дальнейшей работы заполните данные о профиле и дождитесь получения статуса от администратора сайта.</h4>
     <#else>
+        <#if successMessage??>
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                ${successMessage}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </#if>
+        <#if errorMessage??>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ${errorMessage}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </#if>
+
         <div class="card">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
@@ -55,6 +68,27 @@
                                                             <#if lesson.lessonType??><i class="bi bi-journal-text"></i> ${lesson.lessonType.type}</#if>
                                                         </small>
                                                     </p>
+                                                    <#if lessonMessages[lessonKey]??>
+                                                        <button type="button" class="btn btn-sm btn-info mt-1" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#viewMessageModal"
+                                                                data-lesson-id="${lesson.id}"
+                                                                data-discipline="${lesson.discipline.nameDiscipline}"
+                                                                data-group="${lesson.group.nameGroup}"
+                                                                data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}">
+                                                            <i class="bi bi-eye"></i> Показать сообщение
+                                                        </button>
+                                                    <#else>
+                                                        <button type="button" class="btn btn-sm btn-primary mt-1" 
+                                                                data-bs-toggle="modal" 
+                                                                data-bs-target="#messageModal"
+                                                                data-lesson-id="${lesson.id}"
+                                                                data-discipline="${lesson.discipline.nameDiscipline}"
+                                                                data-group="${lesson.group.nameGroup}"
+                                                                data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}">
+                                                            <i class="bi bi-chat-dots"></i> Добавить сообщение
+                                                        </button>
+                                                    </#if>
                                                 </div>
                                             </div>
                                         </#if>
@@ -67,5 +101,137 @@
                 </div>
             </div>
         </div>
+
+        <!-- Модальное окно для добавления сообщений -->
+        <div class="modal fade" id="messageModal" tabindex="-1" aria-labelledby="messageModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form id="lessonMessageForm" action="/addLessonMessage" method="POST" enctype="multipart/form-data">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="messageModalLabel">Добавить сообщение к занятию</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <input type="hidden" id="lessonId" name="lessonId">
+                            <input type="hidden" id="weekShift" name="weekShift" value="${weekShift}">
+                            <div class="mb-3">
+                                <label class="form-label">Дисциплина: <span id="modalDiscipline"></span></label><br>
+                                <label class="form-label">Группа: <span id="modalGroup"></span></label><br>
+                                <label class="form-label">Дата: <span id="modalDate"></span></label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="messageText" class="form-label">Текст сообщения</label>
+                                <textarea class="form-control" id="messageText" name="textMessage" rows="3" maxlength="2048" required></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <label for="file" class="form-label">Файлы</label>
+                                <input type="file" class="form-control" id="file" name="file" multiple>
+                                <div class="form-text">Максимальный размер файла: 10 МБ</div>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="needToPerform" name="needToPerform">
+                                <label class="form-check-label" for="needToPerform">Требуется выполнение</label>
+                            </div>
+                            <div class="mb-3">
+                                <label for="deadline" class="form-label">Срок выполнения</label>
+                                <input type="datetime-local" class="form-control" id="deadline" name="deadline">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                            <button type="submit" class="btn btn-primary">Сохранить</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для просмотра сообщения -->
+        <div class="modal fade" id="viewMessageModal" tabindex="-1" aria-labelledby="viewMessageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="viewMessageModalLabel">Сообщение к занятию</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Дисциплина: <span id="viewModalDiscipline"></span></label><br>
+                            <label class="form-label">Группа: <span id="viewModalGroup"></span></label><br>
+                            <label class="form-label">Дата: <span id="viewModalDate"></span></label>
+                        </div>
+                        <div id="messagesList">
+                            <#list lessonMessages as key, message>
+                                <#if key == lessonKey>
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <p class="card-text">${message.textMessage}</p>
+                                            <#if message.file??>
+                                                <p class="mb-1"><strong>Прикрепленные файлы:</strong></p>
+                                                <#list message.file?split(";") as fileName>
+                                                    <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary mb-1">
+                                                        <i class="bi bi-download"></i> Скачать файл ${fileName?keep_after("/")}
+                                                    </a>
+                                                </#list>
+                                            </#if>
+                                            <#if message.needToPerform>
+                                                <div class="mt-2">
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
+                                                    </span>
+                                                    <#if message.deadline??>
+                                                        <span class="badge bg-info">
+                                                            <i class="bi bi-clock"></i> Срок: ${message.deadline?string('dd.MM.yyyy HH:mm')}
+                                                        </span>
+                                                    </#if>
+                                                    <#if message.statusTask??>
+                                                        <span class="badge bg-secondary">
+                                                            <i class="bi bi-check2-circle"></i> Статус: ${message.statusTask.status}
+                                                        </span>
+                                                    </#if>
+                                                </div>
+                                            </#if>
+                                        </div>
+                                    </div>
+                                </#if>
+                            </#list>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const messageModal = document.getElementById('messageModal');
+                messageModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const lessonId = button.getAttribute('data-lesson-id');
+                    const discipline = button.getAttribute('data-discipline');
+                    const group = button.getAttribute('data-group');
+                    const date = button.getAttribute('data-date');
+
+                    document.getElementById('lessonId').value = lessonId;
+                    document.getElementById('modalDiscipline').textContent = discipline;
+                    document.getElementById('modalGroup').textContent = group;
+                    document.getElementById('modalDate').textContent = date;
+                });
+
+                const viewMessageModal = document.getElementById('viewMessageModal');
+                viewMessageModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const discipline = button.getAttribute('data-discipline');
+                    const group = button.getAttribute('data-group');
+                    const date = button.getAttribute('data-date');
+
+                    document.getElementById('viewModalDiscipline').textContent = discipline;
+                    document.getElementById('viewModalGroup').textContent = group;
+                    document.getElementById('viewModalDate').textContent = date;
+                });
+            });
+        </script>
     </#if>
 </@c.page>

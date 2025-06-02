@@ -1,11 +1,17 @@
 package ru.journal.homework.aggregator.service;
 
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import ru.journal.homework.aggregator.domain.*;
 import ru.journal.homework.aggregator.repo.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.DayOfWeek;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -14,11 +20,25 @@ import java.time.temporal.ChronoField;
 import java.util.*;
 
 @Service
-@AllArgsConstructor
 public class TeacherService {
     private final TeacherRepo teacherRepo;
     private final PairRepo pairRepo;
     private final LessonRepo lessonRepo;
+    private final LessonMessageRepo lessonMessageRepo;
+    private final TaskRepo taskRepo;
+    private final StatusTaskRepo statusTaskRepo;
+
+    public TeacherService(TeacherRepo teacherRepo, PairRepo pairRepo, LessonRepo lessonRepo, LessonMessageRepo lessonMessageRepo, TaskRepo taskRepo, StatusTaskRepo statusTaskRepo) {
+        this.teacherRepo = teacherRepo;
+        this.pairRepo = pairRepo;
+        this.lessonRepo = lessonRepo;
+        this.lessonMessageRepo = lessonMessageRepo;
+        this.taskRepo = taskRepo;
+        this.statusTaskRepo = statusTaskRepo;
+    }
+
+    @Value("${upload.path}")
+    private String uploadPath;
 
     public List<String> getDatesString(Integer shift){
         LocalDate today = LocalDate.now();
@@ -93,11 +113,112 @@ public class TeacherService {
         return lessonMap;
     }
 
+    public Map<String, LessonMessage> getWeekLessonMessages(Map<String, Lesson> lessons) {
+        Map<String, LessonMessage> messagesMap = new HashMap<>();
+        
+        for (Map.Entry<String, Lesson> entry : lessons.entrySet()) {
+            List<LessonMessage> messages = lessonMessageRepo.findByLessonsId(entry.getValue().getId());
+            if (!messages.isEmpty()) {
+                messagesMap.put(entry.getKey(), messages.get(0));
+            }
+        }
+        
+        return messagesMap;
+    }
+
     public List<Pair> getAllPairs() {
         return pairRepo.findAll();
     }
 
     public Teacher getTeacher(User user){
         return teacherRepo.findTeacherByUserId(user.getId());
+    }
+
+    public Integer saveLessonMessage(User user, Long lessonId, String textMessage,
+                                     MultipartFile[] files, Boolean needToPerform,
+                                     Instant deadline) throws IOException {
+
+        // Проверка даты сдачи для обязательных работ
+        if (needToPerform) {
+            if (deadline == null) {
+                return 2; // Ошибка: для обязательной работы необходимо указать срок сдачи
+            }
+            if (!deadline.isAfter(Instant.now())) {
+                return 1; // Ошибка: дата сдачи должна быть позже текущего момента
+            }
+        }
+
+        LessonMessage message = new LessonMessage();
+        message.setLessons(findLessonById(lessonId));
+        message.setTextMessage(textMessage);
+        message.setNeedToPerform(needToPerform);
+
+        if (deadline != null) {
+            message.setDeadline(deadline);
+        }
+
+        if (files != null && files.length > 0) {
+            List<String> fileNames = new ArrayList<>();
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    String fileName = saveFile(file, lessonId);
+                    fileNames.add(fileName);
+                }
+            }
+            message.setFile(String.join(";", fileNames));
+        }
+
+        // Устанавливаем начальный статус для обязательного задания
+        if (needToPerform) {
+            message.setStatusTask(statusTaskRepo.findFirstByOrderById());
+        }
+
+        lessonMessageRepo.save(message);
+
+        if(needToPerform){
+            Task task = new Task();
+            task.setTask(textMessage);
+            task.setLessonMessage(message);
+            
+            Lesson lesson = findLessonById(lessonId);
+            task.setTeacher(lesson.getTeacher());
+            task.setDiscipline(lesson.getDiscipline());
+            
+            taskRepo.save(task);
+        }
+        return 0;
+    }
+
+    public Lesson findLessonById(Long id) {
+        return lessonRepo.findById(id).get();
+    }
+
+    public String saveFile(MultipartFile file, Long lessonId) throws IOException {
+        if (file != null && !file.isEmpty()) {
+            // Создаем директорию, если её нет
+            Path lessonDir = Paths.get(uploadPath, lessonId.toString(), "teacher");
+            if (!Files.exists(lessonDir)) {
+                Files.createDirectories(lessonDir);
+            }
+
+            // Генерируем уникальное имя файла
+            String originalFilename = file.getOriginalFilename();
+            String extension = getFileExtension(originalFilename);
+            String uniqueFilename = UUID.randomUUID().toString() + "." + extension;
+
+            // Сохраняем файл
+            Path filePath = lessonDir.resolve(uniqueFilename);
+            Files.copy(file.getInputStream(), filePath);
+
+            return lessonId + "/teacher/" + uniqueFilename;
+        }
+        return null;
+    }
+
+    private String getFileExtension(String filename) {
+        if (filename != null && filename.lastIndexOf(".") != -1) {
+            return filename.substring(filename.lastIndexOf(".") + 1);
+        }
+        return "";
     }
 }

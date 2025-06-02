@@ -11,4 +11,8 @@
         <comment>создание таблиц бд</comment>
         <sqlFile path="../../sql/add_data.sql" endDelimiter=";" relativeToChangelogFile="true"/>
     </changeSet>
+    <changeSet id="alter_file_column" author="mnrodionov">
+        <comment>изменение ограничения длины строки файла</comment>
+        <sqlFile path="../../sql/alter_file_column_size.sql" endDelimiter=";" relativeToChangelogFile="true"/>
+    </changeSet>
 </databaseChangeLog>
