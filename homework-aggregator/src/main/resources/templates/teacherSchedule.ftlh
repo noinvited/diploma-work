@@ -194,6 +194,7 @@
                                                     data-text="${message.textMessage}"
                                                     data-need-perform="${message.needToPerform?string}"
                                                     data-deadline="${message.deadline!''}"
+                                                    data-files="${message.file!''}"
                                                     onclick="prepareEditForm(this)">
                                                 <i class="bi bi-pencil"></i> Редактировать
                                             </button>
@@ -256,6 +257,10 @@
         <script>
             document.addEventListener('DOMContentLoaded', function() {
                 const messageModal = document.getElementById('messageModal');
+                const viewMessageModal = document.getElementById('viewMessageModal');
+                const editMessageModal = document.getElementById('editMessageModal');
+                let isEditMode = false;
+
                 messageModal.addEventListener('show.bs.modal', function(event) {
                     const button = event.relatedTarget;
                     const lessonId = button.getAttribute('data-lesson-id');
@@ -269,7 +274,6 @@
                     document.getElementById('modalDate').textContent = date;
                 });
 
-                const viewMessageModal = document.getElementById('viewMessageModal');
                 viewMessageModal.addEventListener('show.bs.modal', function(event) {
                     const button = event.relatedTarget;
                     const discipline = button.getAttribute('data-discipline');
@@ -290,6 +294,33 @@
                             card.style.display = 'none';
                         }
                     });
+                });
+
+                // При открытии окна редактирования
+                editMessageModal.addEventListener('show.bs.modal', function(event) {
+                    isEditMode = true;
+                });
+
+                // При закрытии окна редактирования
+                editMessageModal.addEventListener('hidden.bs.modal', function(event) {
+                    document.getElementById('editMessageForm').reset();
+                    if (isEditMode) {
+                        const viewModal = bootstrap.Modal.getInstance(viewMessageModal) || new bootstrap.Modal(viewMessageModal);
+                        viewModal.show();
+                    }
+                    isEditMode = false;
+                });
+
+                // При закрытии окна просмотра
+                viewMessageModal.addEventListener('hide.bs.modal', function(event) {
+                    // Если мы не переходим в режим редактирования, закрываем все модальные окна
+                    if (!isEditMode) {
+                        const modals = [messageModal, viewMessageModal, editMessageModal].map(modal => 
+                            bootstrap.Modal.getInstance(modal)
+                        ).filter(Boolean);
+                        
+                        modals.forEach(modal => modal.hide());
+                    }
                 });
             });
 
@@ -312,6 +343,7 @@
                 }
             }
 
+            // Функция удаления сообщения
             function deleteMessage(messageId) {
                 if (confirm('Вы уверены, что хотите удалить это сообщение?')) {
                     const form = document.createElement('form');
