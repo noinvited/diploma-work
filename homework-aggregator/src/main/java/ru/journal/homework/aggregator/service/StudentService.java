@@ -3,10 +3,7 @@ package ru.journal.homework.aggregator.service;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.journal.homework.aggregator.domain.*;
-import ru.journal.homework.aggregator.repo.GroupRepo;
-import ru.journal.homework.aggregator.repo.LessonRepo;
-import ru.journal.homework.aggregator.repo.LessonTypeRepo;
-import ru.journal.homework.aggregator.repo.PairRepo;
+import ru.journal.homework.aggregator.repo.*;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
@@ -23,6 +20,7 @@ public class StudentService {
     private final LessonTypeRepo lessonTypeRepo;
     private final PairRepo pairRepo;
     private final GroupRepo groupRepo;
+    private final LessonMessageRepo lessonMessageRepo;
 
     public List<String> getDatesString(Integer shift){
         LocalDate today = LocalDate.now();
@@ -103,5 +101,18 @@ public class StudentService {
 
     public Group getStudentGroup(User user) {
         return groupRepo.findGroupByStudentUserId(user.getId());
+    }
+
+    public Map<String, LessonMessage> getWeekLessonMessages(Map<String, Lesson> lessons) {
+        Map<String, LessonMessage> messagesMap = new HashMap<>();
+        
+        for (Map.Entry<String, Lesson> entry : lessons.entrySet()) {
+            List<LessonMessage> messages = lessonMessageRepo.findByLessonsId(entry.getValue().getId());
+            if (!messages.isEmpty()) {
+                messagesMap.put(entry.getKey(), messages.get(0));
+            }
+        }
+        
+        return messagesMap;
     }
 }

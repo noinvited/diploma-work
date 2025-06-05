@@ -58,12 +58,14 @@ public class MainController {
     ) {
         Group studentGroup = studentService.getStudentGroup(user);
         if (studentGroup != null) {
+            Map<String, Lesson> lessons = studentService.getWeekLessons(studentGroup.getId(), weekShift);
             model.addAttribute("selectedGroup", studentGroup);
             model.addAttribute("weekShift", weekShift);
             model.addAttribute("pairTimes", studentService.getAllPairs());
             model.addAttribute("days", studentService.getDatesString(weekShift));
             model.addAttribute("dates", studentService.getDates(weekShift));
-            model.addAttribute("lessons", studentService.getWeekLessons(studentGroup.getId(), weekShift));
+            model.addAttribute("lessons", lessons);
+            model.addAttribute("lessonMessages", studentService.getWeekLessonMessages(lessons));
         }
         return "studentSchedule";
     }

@@ -55,6 +55,19 @@
                                                                 <#if lesson.lessonType??><i class="bi bi-journal-text"></i> ${lesson.lessonType.type}</#if>
                                                             </small>
                                                         </p>
+                                                        <#if lessonMessages?? && lessonMessages[lessonKey]??>
+                                                            <button type="button" class="btn btn-sm btn-outline-primary mt-1"
+                                                                    data-bs-toggle="modal" 
+                                                                    data-bs-target="#viewMessageModal"
+                                                                    data-lesson-id="${lesson.id}"
+                                                                    data-lesson-key="${lessonKey}"
+                                                                    data-discipline="${lesson.discipline.nameDiscipline}"
+                                                                    data-teacher="${lesson.teacher.user.fio!lesson.teacher.user.username}"
+                                                                    data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}"
+                                                                    data-pair-number="${pair.id}">
+                                                                <i class="bi bi-envelope"></i> Сообщение к занятию
+                                                            </button>
+                                                        </#if>
                                                     </div>
                                                 </div>
                                             </#if>
@@ -67,5 +80,88 @@
                 </div>
             </div>
         </div>
+
+        <!-- Модальное окно для просмотра сообщения -->
+        <div class="modal fade" id="viewMessageModal" tabindex="-1" aria-labelledby="viewMessageModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="viewMessageModalLabel">Сообщение к занятию</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Дисциплина: <span id="viewModalDiscipline"></span></label><br>
+                            <label class="form-label">Преподаватель: <span id="viewModalTeacher"></span></label><br>
+                            <label class="form-label">Дата: <span id="viewModalDate"></span>, пара №<span id="viewModalPairNumber"></span></label>
+                        </div>
+                        <div id="messagesList">
+                            <#if lessonMessages??>
+                                <#list lessonMessages as key, message>
+                                    <div class="card mb-3 message-card" data-message-key="${key}" style="display: none;">
+                                        <div class="card-body">
+                                            <p class="card-text">${message.textMessage}</p>
+                                            <#if message.file?? && message.file?has_content>
+                                                <p class="mb-1"><strong>Прикрепленные файлы:</strong></p>
+                                                <#list message.file?split(";") as fileName>
+                                                    <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary mb-1">
+                                                        <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
+                                                    </a>
+                                                </#list>
+                                            </#if>
+                                            <#if message.formattedDeadline??>
+                                                <div class="mt-2">
+                                                    <span class="badge bg-info">
+                                                        <i class="bi bi-clock"></i> Срок: ${message.formattedDeadline}
+                                                    </span>
+                                                    <#if message.needToPerform>
+                                                        <span class="badge bg-warning text-dark">
+                                                            <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
+                                                        </span>
+                                                    </#if>
+                                                </div>
+                                            </#if>
+                                        </div>
+                                    </div>
+                                </#list>
+                            </#if>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const viewMessageModal = document.getElementById('viewMessageModal');
+
+                viewMessageModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const discipline = button.getAttribute('data-discipline');
+                    const teacher = button.getAttribute('data-teacher');
+                    const date = button.getAttribute('data-date');
+                    const pairNumber = button.getAttribute('data-pair-number');
+                    const lessonKey = button.getAttribute('data-lesson-key');
+
+                    document.getElementById('viewModalDiscipline').textContent = discipline;
+                    document.getElementById('viewModalTeacher').textContent = teacher;
+                    document.getElementById('viewModalDate').textContent = date;
+                    document.getElementById('viewModalPairNumber').textContent = pairNumber;
+
+                    // Скрыть все карточки сообщений
+                    document.querySelectorAll('.message-card').forEach(card => {
+                        const cardKey = card.getAttribute('data-message-key');
+                        if (cardKey === lessonKey) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+                });
+            });
+        </script>
     </#if>
 </@c.page>
