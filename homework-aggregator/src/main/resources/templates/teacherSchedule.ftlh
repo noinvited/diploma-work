@@ -76,7 +76,8 @@
                                                                 data-lesson-key="${lessonKey}"
                                                                 data-discipline="${lesson.discipline.nameDiscipline}"
                                                                 data-group="${lesson.group.nameGroup}"
-                                                                data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}">
+                                                                data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}"
+                                                                data-pair-number="${pair.id}">
                                                             <i class="bi bi-eye"></i> Показать сообщение
                                                         </button>
                                                     <#else>
@@ -86,7 +87,8 @@
                                                                 data-lesson-id="${lesson.id}"
                                                                 data-discipline="${lesson.discipline.nameDiscipline}"
                                                                 data-group="${lesson.group.nameGroup}"
-                                                                data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}">
+                                                                data-date="${date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}"
+                                                                data-pair-number="${pair.id}">
                                                             <i class="bi bi-chat-dots"></i> Добавить сообщение
                                                         </button>
                                                     </#if>
@@ -118,7 +120,7 @@
                             <div class="mb-3">
                                 <label class="form-label">Дисциплина: <span id="modalDiscipline"></span></label><br>
                                 <label class="form-label">Группа: <span id="modalGroup"></span></label><br>
-                                <label class="form-label">Дата: <span id="modalDate"></span></label>
+                                <label class="form-label">Дата: <span id="modalDate"></span>, пара №<span id="modalPairNumber"></span></label>
                             </div>
                             <div class="mb-3">
                                 <label for="messageText" class="form-label">Текст сообщения</label>
@@ -159,7 +161,7 @@
                         <div class="mb-3">
                             <label class="form-label">Дисциплина: <span id="viewModalDiscipline"></span></label><br>
                             <label class="form-label">Группа: <span id="viewModalGroup"></span></label><br>
-                            <label class="form-label">Дата: <span id="viewModalDate"></span></label>
+                            <label class="form-label">Дата: <span id="viewModalDate"></span>, пара №<span id="viewModalPairNumber"></span></label>
                         </div>
                         <div id="messagesList">
                             <#list lessonMessages as key, message>
@@ -174,14 +176,14 @@
                                                 </a>
                                             </#list>
                                         </#if>
-                                        <#if message.needToPerform>
+                                        <#if message.formattedDeadline??>
                                             <div class="mt-2">
-                                                <span class="badge bg-warning text-dark">
-                                                    <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
+                                                <span class="badge bg-info">
+                                                    <i class="bi bi-clock"></i> Срок: ${message.formattedDeadline}
                                                 </span>
-                                                <#if message.formattedDeadline??>
-                                                    <span class="badge bg-info">
-                                                        <i class="bi bi-clock"></i> Срок: ${message.formattedDeadline}
+                                                <#if message.needToPerform>
+                                                    <span class="badge bg-warning text-dark">
+                                                        <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
                                                     </span>
                                                 </#if>
                                             </div>
@@ -232,7 +234,13 @@
                                 <textarea class="form-control" id="editMessageText" name="textMessage" rows="3" maxlength="2048" required></textarea>
                             </div>
                             <div class="mb-3">
-                                <label for="editFile" class="form-label">Файлы</label>
+                                <label class="form-label">Текущие файлы</label>
+                                <div id="currentFiles" class="mb-2">
+                                    <p class="text-muted">Нет прикрепленных файлов</p>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="editFile" class="form-label">Изменить набор файлов</label>
                                 <input type="file" class="form-control" id="editFile" name="file" multiple>
                                 <div class="form-text">Максимальный размер файла: 10 МБ</div>
                             </div>
@@ -267,11 +275,13 @@
                     const discipline = button.getAttribute('data-discipline');
                     const group = button.getAttribute('data-group');
                     const date = button.getAttribute('data-date');
+                    const pairNumber = button.getAttribute('data-pair-number');
 
                     document.getElementById('lessonId').value = lessonId;
                     document.getElementById('modalDiscipline').textContent = discipline;
                     document.getElementById('modalGroup').textContent = group;
                     document.getElementById('modalDate').textContent = date;
+                    document.getElementById('modalPairNumber').textContent = pairNumber;
                 });
 
                 viewMessageModal.addEventListener('show.bs.modal', function(event) {
@@ -279,11 +289,13 @@
                     const discipline = button.getAttribute('data-discipline');
                     const group = button.getAttribute('data-group');
                     const date = button.getAttribute('data-date');
+                    const pairNumber = button.getAttribute('data-pair-number');
                     const lessonKey = button.getAttribute('data-lesson-key');
 
                     document.getElementById('viewModalDiscipline').textContent = discipline;
                     document.getElementById('viewModalGroup').textContent = group;
                     document.getElementById('viewModalDate').textContent = date;
+                    document.getElementById('viewModalPairNumber').textContent = pairNumber;
 
                     // Скрыть все карточки сообщений
                     document.querySelectorAll('.message-card').forEach(card => {
@@ -329,17 +341,39 @@
                 const text = button.getAttribute('data-text');
                 const needPerform = button.getAttribute('data-need-perform') === 'true';
                 const deadline = button.getAttribute('data-deadline');
+                const files = button.getAttribute('data-files');
 
                 document.getElementById('editMessageId').value = messageId;
                 document.getElementById('editMessageText').value = text;
                 document.getElementById('editNeedToPerform').checked = needPerform;
                 
-                if (deadline) {
+                if (deadline && deadline.trim() !== '') {
                     const deadlineDate = new Date(deadline);
+                    deadlineDate.setHours(deadlineDate.getHours() + 3);
                     const formattedDeadline = deadlineDate.toISOString().slice(0, 16);
                     document.getElementById('editDeadline').value = formattedDeadline;
                 } else {
                     document.getElementById('editDeadline').value = '';
+                }
+
+                // Отображение текущих файлов
+                const currentFilesDiv = document.getElementById('currentFiles');
+                currentFilesDiv.innerHTML = ''; // Очищаем предыдущий список файлов
+
+                if (files && files.trim() !== '') {
+                    const fileList = files.split(';');
+                    fileList.forEach(fileName => {
+                        if (fileName.trim() !== '') {
+                            const fileLink = document.createElement('a');
+                            fileLink.href = '/files/' + fileName;
+                            fileLink.className = 'btn btn-sm btn-outline-primary me-2 mb-2';
+                            const shortName = fileName.substring(fileName.lastIndexOf('/') + 1);
+                            fileLink.innerHTML = '<i class="bi bi-download"></i> ' + shortName;
+                            currentFilesDiv.appendChild(fileLink);
+                        }
+                    });
+                } else {
+                    currentFilesDiv.innerHTML = '<p class="text-muted">Нет прикрепленных файлов</p>';
                 }
             }
 

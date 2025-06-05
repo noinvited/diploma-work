@@ -149,13 +149,15 @@ public class TeacherService {
             }
         }
 
-        try {
-            deadline = LocalDateTime.parse(deadlineStr).atZone(ZoneId.systemDefault()).toInstant();
-            if (!deadline.isAfter(Instant.now())) {
-                return 1; // Ошибка: дата сдачи должна быть позже текущего момента
+        if(deadlineStr != null && !deadlineStr.isEmpty()){
+            try {
+                deadline = LocalDateTime.parse(deadlineStr).atZone(ZoneId.systemDefault()).toInstant();
+                if (!deadline.isAfter(Instant.now())) {
+                    return 1; // Ошибка: дата сдачи должна быть позже текущего момента
+                }
+            } catch (Exception e) {
+                return 3; // Ошибка: некорректный формат даты
             }
-        } catch (Exception e) {
-            return 3; // Ошибка: некорректный формат даты
         }
 
         LessonMessage message = new LessonMessage();
