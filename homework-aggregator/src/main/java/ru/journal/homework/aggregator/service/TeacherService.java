@@ -21,6 +21,7 @@ import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.util.*;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.stream.Collectors;
 
 @Service
 public class TeacherService {
@@ -30,14 +31,18 @@ public class TeacherService {
     private final LessonMessageRepo lessonMessageRepo;
     private final TaskRepo taskRepo;
     private final StatusTaskRepo statusTaskRepo;
+    private final TeacherDisciplineRepo teacherDisciplineRepo;
+    private final TeacherGroupRepo teacherGroupRepo;
 
-    public TeacherService(TeacherRepo teacherRepo, PairRepo pairRepo, LessonRepo lessonRepo, LessonMessageRepo lessonMessageRepo, TaskRepo taskRepo, StatusTaskRepo statusTaskRepo) {
+    public TeacherService(TeacherRepo teacherRepo, PairRepo pairRepo, LessonRepo lessonRepo, LessonMessageRepo lessonMessageRepo, TaskRepo taskRepo, StatusTaskRepo statusTaskRepo, TeacherDisciplineRepo teacherDisciplineRepo, TeacherGroupRepo teacherGroupRepo) {
         this.teacherRepo = teacherRepo;
         this.pairRepo = pairRepo;
         this.lessonRepo = lessonRepo;
         this.lessonMessageRepo = lessonMessageRepo;
         this.taskRepo = taskRepo;
         this.statusTaskRepo = statusTaskRepo;
+        this.teacherDisciplineRepo = teacherDisciplineRepo;
+        this.teacherGroupRepo = teacherGroupRepo;
     }
 
     @Value("${upload.path}")
@@ -337,5 +342,73 @@ public class TeacherService {
 
         lessonMessageRepo.delete(message);
         return true;
+    }
+
+    public List<Discipline> getTeacherDisciplines(Long teacherId) {
+        return teacherDisciplineRepo.findAllDisciplinesByTeacherId(teacherId);
+    }
+
+    public List<Group> getTeacherGroups(Long teacherId) {
+        return teacherGroupRepo.findAllGroupsByTeacherId(teacherId);
+    }
+
+    public List<StatusTask> getAllStatusTasks() {
+        return statusTaskRepo.findAll();
+    }
+
+    public List<LessonMessage> getFilteredMessages(
+            Long teacherId,
+            Long disciplineId,
+            Long groupId,
+            Boolean needToPerform,
+            Long statusId
+    ) {
+        // Get all lessons for the teacher
+        List<Lesson> lessons = lessonRepo.findByTeacherId(teacherId);
+        
+        // Filter lessons by discipline if specified
+        if (disciplineId != null) {
+            lessons = lessons.stream()
+                    .filter(lesson -> lesson.getDiscipline().getId().equals(disciplineId))
+                    .collect(Collectors.toList());
+        }
+
+        // Filter lessons by group if specified
+        if (groupId != null) {
+            lessons = lessons.stream()
+                    .filter(lesson -> lesson.getGroup().getId().equals(groupId))
+                    .collect(Collectors.toList());
+        }
+
+        // Get all messages for filtered lessons
+        List<LessonMessage> allMessages = new ArrayList<>();
+        for (Lesson lesson : lessons) {
+            List<LessonMessage> messages = lessonMessageRepo.findByLessonsId(lesson.getId());
+            allMessages.addAll(messages);
+        }
+
+        // Filter by needToPerform if specified
+        if (needToPerform != null) {
+            allMessages = allMessages.stream()
+                    .filter(msg -> msg.getNeedToPerform() == needToPerform)
+                    .collect(Collectors.toList());
+        }
+
+        // Filter by status if specified
+        if (statusId != null) {
+            allMessages = allMessages.stream()
+                    .filter(msg -> {
+                        if (msg.getStatusTask() == null) {
+                            return false;
+                        }
+                        return msg.getStatusTask().getId().equals(statusId);
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // Sort by lesson date (newest first)
+        allMessages.sort((m1, m2) -> m2.getLessons().getDate().compareTo(m1.getLessons().getDate()));
+
+        return allMessages;
     }
 }

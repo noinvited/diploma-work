@@ -64,7 +64,7 @@
             <#if messages?has_content>
                 <div class="list-group">
                     <#list messages as message>
-                        <div class="list-group-item <#if !message?is_last>mb-3</#if>">
+                        <div class="list-group-item border-0 mb-3 shadow-sm rounded">
                             <div class="d-flex w-100 justify-content-between align-items-center">
                                 <h5 class="mb-1">${message.lessons.discipline.nameDiscipline}</h5>
                                 <small class="text-muted">
@@ -72,7 +72,7 @@
                                 </small>
                             </div>
                             <p class="mb-1">${message.textMessage}</p>
-                            <div class="d-flex justify-content-between align-items-center">
+                            <div class="d-flex justify-content-between align-items-center mt-3">
                                 <small class="text-muted">
                                     Преподаватель: ${message.lessons.teacher.user.fio!message.lessons.teacher.user.username}
                                 </small>
@@ -95,9 +95,9 @@
                                 </div>
                             </div>
                             <#if message.file?? && message.file?has_content>
-                                <div class="mt-2">
+                                <div class="mt-3 pt-3 border-top">
                                     <#list message.file?split(";") as fileName>
-                                        <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary me-1">
+                                        <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary me-2">
                                             <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
                                         </a>
                                     </#list>

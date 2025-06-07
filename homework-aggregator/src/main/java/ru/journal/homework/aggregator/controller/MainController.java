@@ -248,11 +248,34 @@ public class MainController {
     @PreAuthorize("hasAuthority('USER')")
     public String teacherTasks(
             @AuthenticationPrincipal User user,
+            @RequestParam(required = false) Long disciplineId,
+            @RequestParam(required = false) Long groupId,
+            @RequestParam(required = false) Boolean needToPerform,
+            @RequestParam(required = false) Long statusId,
             Model model
     ) {
         Teacher teacher = teacherService.getTeacher(user);
         if (teacher != null) {
+            List<Discipline> disciplines = teacherService.getTeacherDisciplines(teacher.getId());
+            List<Group> groups = teacherService.getTeacherGroups(teacher.getId());
+            List<StatusTask> statusTasks = teacherService.getAllStatusTasks();
 
+            model.addAttribute("disciplines", disciplines);
+            model.addAttribute("groups", groups);
+            model.addAttribute("statuses", statusTasks);
+            model.addAttribute("selectedDiscipline", disciplineId);
+            model.addAttribute("selectedGroup", groupId);
+            model.addAttribute("selectedNeedToPerform", needToPerform);
+            model.addAttribute("selectedStatus", statusId);
+
+            List<LessonMessage> messages = teacherService.getFilteredMessages(
+                    teacher.getId(),
+                    disciplineId,
+                    groupId,
+                    needToPerform,
+                    statusId
+            );
+            model.addAttribute("messages", messages);
         } else {
             return "redirect:/studentTasks";
         }
