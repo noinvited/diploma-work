@@ -12,7 +12,7 @@
         </div>
     </#if>
 
-    <div class="card card-body col-sm-6 mb-3">
+    <div class="card card-body col-sm-6 mb-5">
         <h5 class="card-title">Редактирование пользователя:</h5>
         <form action="/user/{userId}" method="post">
             <input type="text" name="username" class="form-control" value="${user.username}" required>

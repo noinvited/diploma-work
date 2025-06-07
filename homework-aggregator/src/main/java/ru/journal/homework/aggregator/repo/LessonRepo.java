@@ -9,4 +9,5 @@ import java.util.List;
 public interface LessonRepo extends JpaRepository<Lesson, Long> {
     List<Lesson> findByGroupIdAndDateIn(Long groupId, List<LocalDate> dates);
     List<Lesson> findByTeacherIdAndDateIn(Long teacherId, List<LocalDate> dates);
+    List<Lesson> findByGroupId(Long groupId);
 }

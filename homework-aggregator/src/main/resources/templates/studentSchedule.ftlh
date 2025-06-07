@@ -5,7 +5,7 @@
     <#if isStudent == 0>
         <h4>Для дальнейшей работы заполните данные о профиле и дождитесь получения статуса от администратора сайта.</h4>
     <#else>
-        <div class="card">
+        <div class="card mb-5">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Расписание группы ${selectedGroup.nameGroup}</h5>

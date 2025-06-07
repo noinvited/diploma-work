@@ -36,7 +36,7 @@
             ${message4}
         </div>
     </#if>
-    <div class="card card-body">
+    <div class="card card-body mb-5">
         <form method="post">
             <h6 class="mb-3">Заполнение личных данных:</h6>
             <div class="row mb-3">

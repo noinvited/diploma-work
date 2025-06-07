@@ -18,10 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import ru.journal.homework.aggregator.domain.Group;
-import ru.journal.homework.aggregator.domain.Teacher;
-import ru.journal.homework.aggregator.domain.User;
-import ru.journal.homework.aggregator.domain.Lesson;
+import ru.journal.homework.aggregator.domain.*;
 import ru.journal.homework.aggregator.service.StudentService;
 import ru.journal.homework.aggregator.service.TeacherService;
 
@@ -31,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 @Controller
@@ -66,6 +65,8 @@ public class MainController {
             model.addAttribute("dates", studentService.getDates(weekShift));
             model.addAttribute("lessons", lessons);
             model.addAttribute("lessonMessages", studentService.getWeekLessonMessages(lessons));
+        } else {
+            return "redirect:/teacherSchedule";
         }
         return "studentSchedule";
     }
@@ -86,6 +87,8 @@ public class MainController {
             model.addAttribute("dates", teacherService.getDates(weekShift));
             model.addAttribute("lessons", lessons);
             model.addAttribute("lessonMessages", teacherService.getWeekLessonMessages(lessons));
+        } else {
+            return "redirect:/studentSchedule";
         }
         return "teacherSchedule";
     }
@@ -105,7 +108,6 @@ public class MainController {
         try {
             Teacher teacher = teacherService.getTeacher(user);
             if (teacher == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Только преподаватель может добавлять сообщения к занятию");
                 return "redirect:/studentSchedule";
             }
 
@@ -156,7 +158,6 @@ public class MainController {
         try {
             Teacher teacher = teacherService.getTeacher(user);
             if (teacher == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Только преподаватель может редактировать сообщения");
                 return "redirect:/studentSchedule";
             }
 
@@ -199,7 +200,6 @@ public class MainController {
         try {
             Teacher teacher = teacherService.getTeacher(user);
             if (teacher == null) {
-                redirectAttributes.addFlashAttribute("errorMessage", "Только преподаватель может удалять сообщения");
                 return "redirect:/studentSchedule";
             }
 
@@ -242,5 +242,52 @@ public class MainController {
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
         }
+    }
+
+    @GetMapping("/teacherTasks")
+    @PreAuthorize("hasAuthority('USER')")
+    public String teacherTasks(
+            @AuthenticationPrincipal User user,
+            Model model
+    ) {
+        Teacher teacher = teacherService.getTeacher(user);
+        if (teacher != null) {
+
+        } else {
+            return "redirect:/studentTasks";
+        }
+        return "teacherTasks";
+    }
+
+    @GetMapping("/studentTasks")
+    @PreAuthorize("hasAuthority('USER')")
+    public String studentTasks(
+            @AuthenticationPrincipal User user,
+            @RequestParam(required = false) Long disciplineId,
+            @RequestParam(required = false) Boolean needToPerform,
+            @RequestParam(required = false) Long statusId,
+            Model model
+    ) {
+        Group studentGroup = studentService.getStudentGroup(user);
+        if (studentGroup != null) {
+            List<Discipline> disciplines = studentService.getAllDisciplines();
+            List<StatusTask> statusTasks = studentService.getAllStatusTasks();
+            model.addAttribute("disciplines", disciplines);
+            model.addAttribute("statuses", statusTasks);
+            model.addAttribute("selectedDiscipline", disciplineId);
+            model.addAttribute("selectedNeedToPerform", needToPerform);
+            model.addAttribute("selectedStatus", statusId);
+
+            List<LessonMessage> messages = studentService.getFilteredMessages(
+                    studentGroup.getId(),
+                    disciplineId,
+                    needToPerform,
+                    statusId
+            );
+            model.addAttribute("messages", messages);
+        } else {
+            return "redirect:/teacherTasks";
+        }
+        return "studentTasks";
     }
 }

@@ -12,12 +12,14 @@ import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.time.temporal.ChronoField;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @AllArgsConstructor
 public class StudentService {
     private final LessonRepo lessonRepo;
-    private final LessonTypeRepo lessonTypeRepo;
+    private final StatusTaskRepo statusTaskRepo;
+    private final DisciplineRepo disciplineRepo;
     private final PairRepo pairRepo;
     private final GroupRepo groupRepo;
     private final LessonMessageRepo lessonMessageRepo;
@@ -114,5 +116,55 @@ public class StudentService {
         }
         
         return messagesMap;
+    }
+
+    public List<LessonMessage> getFilteredMessages(
+            Long groupId,
+            Long disciplineId,
+            Boolean needToPerform,
+            Long statusId
+    ) {
+        List<Lesson> lessons = lessonRepo.findByGroupId(groupId);
+        
+        // Получаем все сообщения для занятий
+        List<LessonMessage> allMessages = new ArrayList<>();
+        for (Lesson lesson : lessons) {
+            if (disciplineId == null || lesson.getDiscipline().getId().equals(disciplineId)) {
+                List<LessonMessage> messages = lessonMessageRepo.findByLessonsId(lesson.getId());
+                allMessages.addAll(messages);
+            }
+        }
+
+        // Фильтруем по обязательности
+        if (needToPerform != null) {
+            allMessages = allMessages.stream()
+                    .filter(msg -> msg.getNeedToPerform() == needToPerform)
+                    .collect(Collectors.toList());
+        }
+
+        // Фильтруем по статусу
+        if (statusId != null) {
+            allMessages = allMessages.stream()
+                    .filter(msg -> {
+                        if (msg.getStatusTask() == null) {
+                            return false;
+                        }
+                        return msg.getStatusTask().getId().equals(statusId);
+                    })
+                    .collect(Collectors.toList());
+        }
+
+        // Сортируем по дате занятия
+        allMessages.sort((m1, m2) -> m2.getLessons().getDate().compareTo(m1.getLessons().getDate()));
+
+        return allMessages;
+    }
+
+    public List<Discipline> getAllDisciplines() {
+        return disciplineRepo.findAll();
+    }
+
+    public List<StatusTask> getAllStatusTasks(){
+        return statusTaskRepo.findAll();
     }
 }
