@@ -30,7 +30,7 @@
                                 </#if>
                             </#if>
                             <li class="nav-item">
-                                <a class="nav-link" <#if isStudent == 1> href="/studentTasks" <#else> href="/teacherTasks"</#if>> Мои Задания</a>
+                                <a class="nav-link" <#if isStudent == 1> href="/studentTasks" <#else> href="/teacherTasks"</#if>> Мои задания</a>
                             </li>
                         </#if>
                     <#else>

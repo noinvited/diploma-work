@@ -19,7 +19,8 @@
                     <select class="form-select" id="disciplineId" name="disciplineId">
                         <option value="">Все предметы</option>
                         <#list disciplines as discipline>
-                            <option value="${discipline.id}" <#if selectedDiscipline?? && selectedDiscipline == discipline.id>selected</#if>>
+                            <option value="${discipline.id}"
+                                    <#if selectedDiscipline?? && selectedDiscipline == discipline.id>selected</#if>>
                                 ${discipline.nameDiscipline}
                             </option>
                         </#list>
@@ -42,7 +43,8 @@
                     <select class="form-select" id="status" name="statusId">
                         <option value="">Любой статус</option>
                         <#list statuses as status>
-                            <option value="${status.id}" <#if selectedStatus?? && selectedStatus == status.id>selected</#if>>
+                            <option value="${status.id}"
+                                    <#if selectedStatus?? && selectedStatus == status.id>selected</#if>>
                                 ${status.status}
                             </option>
                         </#list>
@@ -68,10 +70,22 @@
                             <div class="d-flex w-100 justify-content-between align-items-center">
                                 <h5 class="mb-1">${message.lessons.discipline.nameDiscipline}</h5>
                                 <small class="text-muted">
-                                    ${message.lessons.date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}, пара №${message.lessons.pair.id}
+                                    ${message.lessons.date?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}
+                                    , пара №${message.lessons.pair.id}
                                 </small>
                             </div>
                             <p class="mb-1">${message.textMessage}</p>
+                            
+                            <#if message.file?? && message.file?has_content>
+                                <div class="mt-3">
+                                    <#list message.file?split(";") as fileName>
+                                        <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
+                                        </a>
+                                    </#list>
+                                </div>
+                            </#if>
+
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <small class="text-muted">
                                     Преподаватель: ${message.lessons.teacher.user.fio!message.lessons.teacher.user.username}
@@ -94,13 +108,12 @@
                                     </#if>
                                 </div>
                             </div>
-                            <#if message.file?? && message.file?has_content>
-                                <div class="mt-3 pt-3 border-top">
-                                    <#list message.file?split(";") as fileName>
-                                        <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary me-2">
-                                            <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
-                                        </a>
-                                    </#list>
+
+                            <#if message.needToPerform>
+                                <div class="mt-3 pt-3 border-top text-end">
+                                    <a href="/submit/${message.id}" class="btn btn-success">
+                                        <i class="bi bi-check2-circle"></i> Сдать задание
+                                    </a>
                                 </div>
                             </#if>
                         </div>

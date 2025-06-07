@@ -15,4 +15,8 @@
         <comment>изменение ограничения длины строки файла</comment>
         <sqlFile path="../../sql/alter_file_column_size.sql" endDelimiter=";" relativeToChangelogFile="true"/>
     </changeSet>
+    <changeSet id="submission_system" author="mnrodionov">
+        <comment>изменение системы сообщений на систему сдачи заданий</comment>
+        <sqlFile path="../../sql/submission_system.sql" endDelimiter=";" relativeToChangelogFile="true"/>
+    </changeSet>
 </databaseChangeLog>

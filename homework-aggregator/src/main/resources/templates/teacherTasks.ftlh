@@ -83,6 +83,17 @@
                                 </small>
                             </div>
                             <p class="mb-1">${message.textMessage}</p>
+
+                            <#if message.file?? && message.file?has_content>
+                                <div class="mt-3">
+                                    <#list message.file?split(";") as fileName>
+                                        <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary me-2">
+                                            <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
+                                        </a>
+                                    </#list>
+                                </div>
+                            </#if>
+
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <small class="text-muted">
                                     Группа: ${message.lessons.group.nameGroup}
@@ -105,15 +116,6 @@
                                     </#if>
                                 </div>
                             </div>
-                            <#if message.file?? && message.file?has_content>
-                                <div class="mt-3 pt-3 border-top">
-                                    <#list message.file?split(";") as fileName>
-                                        <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary me-2">
-                                            <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
-                                        </a>
-                                    </#list>
-                                </div>
-                            </#if>
                         </div>
                     </#list>
                 </div>
