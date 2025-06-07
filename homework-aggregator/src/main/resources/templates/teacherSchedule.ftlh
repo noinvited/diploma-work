@@ -238,6 +238,7 @@
                                 <div id="currentFiles" class="mb-2">
                                     <p class="text-muted">Нет прикрепленных файлов</p>
                                 </div>
+                                <div id="filesWarning" class="form-text" style="display: none">Текущие файлы удаляются при сохранении</div>
                             </div>
                             <div class="mb-3">
                                 <label for="editFile" class="form-label">Изменить набор файлов</label>
@@ -334,6 +335,30 @@
                         modals.forEach(modal => modal.hide());
                     }
                 });
+
+                // Обработчик изменения чекбокса "Требуется выполнение"
+                const editNeedToPerform = document.getElementById('editNeedToPerform');
+                editNeedToPerform.addEventListener('change', function() {
+                    const deadlineField = document.getElementById('editDeadline');
+                    if (this.checked) {
+                        deadlineField.setAttribute('required', 'required');
+                    } else {
+                        deadlineField.removeAttribute('required');
+                    }
+                });
+
+                // Добавляем обработчик отправки формы редактирования
+                const editMessageForm = document.getElementById('editMessageForm');
+                editMessageForm.addEventListener('submit', function(e) {
+                    const needPerform = document.getElementById('editNeedToPerform').checked;
+                    const deadline = document.getElementById('editDeadline').value;
+                    
+                    if (needPerform && !deadline) {
+                        e.preventDefault();
+                        alert('Для заданий, требующих выполнения, необходимо указать срок выполнения');
+                        return;
+                    }
+                });
             });
 
             function prepareEditForm(button) {
@@ -358,6 +383,7 @@
 
                 // Отображение текущих файлов
                 const currentFilesDiv = document.getElementById('currentFiles');
+                const filesWarning = document.getElementById('filesWarning');
                 currentFilesDiv.innerHTML = ''; // Очищаем предыдущий список файлов
 
                 if (files && files.trim() !== '') {
@@ -372,8 +398,10 @@
                             currentFilesDiv.appendChild(fileLink);
                         }
                     });
+                    filesWarning.style.display = 'block'; // Показываем предупреждение
                 } else {
                     currentFilesDiv.innerHTML = '<p class="text-muted">Нет прикрепленных файлов</p>';
+                    filesWarning.style.display = 'none'; // Скрываем предупреждение
                 }
             }
 

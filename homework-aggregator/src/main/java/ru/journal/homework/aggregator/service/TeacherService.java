@@ -201,6 +201,78 @@ public class TeacherService {
         return 0;
     }
 
+    public Integer editLessonMessage(Long messageId, Long teacherId, String textMessage,
+                                     MultipartFile[] files, Boolean needToPerform,
+                                     String deadline) throws IOException {
+        Optional<LessonMessage> messageOpt = lessonMessageRepo.findById(messageId);
+        if (messageOpt.isEmpty()) {
+            return 4;
+        }
+
+        LessonMessage message = messageOpt.get();
+        if (!message.getLessons().getTeacher().getId().equals(teacherId)) {
+            return 4;
+        }
+
+        Instant deadlineInstant = null;
+        if (needToPerform) {
+            if (deadline == null || deadline.isEmpty()) {
+                return 2; // Ошибка: для обязательной работы необходимо указать срок сдачи
+            }
+        }
+
+        if(deadline != null && !deadline.isEmpty()){
+            try {
+                deadlineInstant = LocalDateTime.parse(deadline).atZone(ZoneId.systemDefault()).toInstant();
+                if (!deadlineInstant.isAfter(Instant.now())) {
+                    return 1; // Ошибка: дата сдачи должна быть позже текущего момента
+                }
+            } catch (Exception e) {
+                return 3; // Ошибка: некорректный формат даты
+            }
+        }
+
+        message.setTextMessage(textMessage);
+        message.setNeedToPerform(needToPerform);
+
+        if (deadlineInstant != null) {
+            message.setDeadline(deadlineInstant);
+        }
+
+        if (files != null && files.length > 0) {
+            List<String> fileNames = new ArrayList<>();
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+
+                    String fileName = saveFile(file, message.getLessons().getId());
+                    fileNames.add(fileName);
+                }
+            }
+            message.setFile(String.join(";", fileNames));
+        }
+
+        if (needToPerform) {
+            message.setStatusTask(statusTaskRepo.findFirstByOrderById());
+        }
+
+        lessonMessageRepo.save(message);
+
+        if(needToPerform){
+            Task task = taskRepo.findByLessonMessageId(messageId);
+            if (task == null) {
+                task = new Task();
+                task.setLessonMessage(message);
+                task.setTeacher(message.getLessons().getTeacher());
+                task.setDiscipline(message.getLessons().getDiscipline());
+            }
+            task.setTask(textMessage);
+
+            taskRepo.save(task);
+        }
+
+        return 0;
+    }
+
     public Lesson findLessonById(Long id) {
         return lessonRepo.findById(id).get();
     }

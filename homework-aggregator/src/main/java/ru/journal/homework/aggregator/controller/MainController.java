@@ -141,6 +141,53 @@ public class MainController {
         return "redirect:/teacherSchedule?weekShift=" + weekShift;
     }
 
+    @PostMapping("/editLessonMessage")
+    @PreAuthorize("hasAuthority('USER')")
+    public String editLessonMessage(
+            @AuthenticationPrincipal User user,
+            @RequestParam("messageId") Long messageId,
+            @RequestParam("textMessage") String textMessage,
+            @RequestParam(value = "file", required = false) MultipartFile[] files,
+            @RequestParam(value = "needToPerform", required = false, defaultValue = "false") Boolean needToPerform,
+            @RequestParam(value = "deadline", required = false) String deadline,
+            @RequestParam(value = "weekShift", required = false, defaultValue = "0") Integer weekShift,
+            RedirectAttributes redirectAttributes
+    ) {
+        try {
+            Teacher teacher = teacherService.getTeacher(user);
+            if (teacher == null) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Только преподаватель может редактировать сообщения");
+                return "redirect:/studentSchedule";
+            }
+
+            Integer result = teacherService.editLessonMessage(messageId, teacher.getId(), textMessage, files, needToPerform, deadline);
+            
+            switch (result) {
+                case 0:
+                    redirectAttributes.addFlashAttribute("successMessage", "Сообщение успешно обновлено");
+                    break;
+                case 1:
+                    redirectAttributes.addFlashAttribute("errorMessage", "Дата сдачи должна быть позже текущего момента");
+                    break;
+                case 2:
+                    redirectAttributes.addFlashAttribute("errorMessage", "Для обязательной работы необходимо указать срок сдачи");
+                    break;
+                case 3:
+                    redirectAttributes.addFlashAttribute("errorMessage", "Некорректный формат даты");
+                    break;
+                case 4:
+                    redirectAttributes.addFlashAttribute("errorMessage", "Вы можете редактировать только свои сообщения");
+                    break;
+                default:
+                    redirectAttributes.addFlashAttribute("errorMessage", "Неизвестная ошибка при обновлении сообщения");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Ошибка при обновлении сообщения: " + e.getMessage());
+        }
+
+        return "redirect:/teacherSchedule?weekShift=" + weekShift;
+    }
+
     @PostMapping("/deleteLessonMessage")
     @PreAuthorize("hasAuthority('USER')")
     public String deleteLessonMessage(
