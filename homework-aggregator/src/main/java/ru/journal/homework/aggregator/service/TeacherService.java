@@ -363,38 +363,32 @@ public class TeacherService {
             Boolean needToPerform,
             Long statusId
     ) {
-        // Get all lessons for the teacher
         List<Lesson> lessons = lessonRepo.findByTeacherId(teacherId);
-        
-        // Filter lessons by discipline if specified
+
         if (disciplineId != null) {
             lessons = lessons.stream()
                     .filter(lesson -> lesson.getDiscipline().getId().equals(disciplineId))
                     .collect(Collectors.toList());
         }
 
-        // Filter lessons by group if specified
         if (groupId != null) {
             lessons = lessons.stream()
                     .filter(lesson -> lesson.getGroup().getId().equals(groupId))
                     .collect(Collectors.toList());
         }
 
-        // Get all messages for filtered lessons
         List<LessonMessage> allMessages = new ArrayList<>();
         for (Lesson lesson : lessons) {
             List<LessonMessage> messages = lessonMessageRepo.findByLessonsId(lesson.getId());
             allMessages.addAll(messages);
         }
 
-        // Filter by needToPerform if specified
         if (needToPerform != null) {
             allMessages = allMessages.stream()
                     .filter(msg -> msg.getNeedToPerform() == needToPerform)
                     .collect(Collectors.toList());
         }
 
-        // Filter by status if specified
         if (statusId != null) {
             allMessages = allMessages.stream()
                     .filter(msg -> {
@@ -406,7 +400,6 @@ public class TeacherService {
                     .collect(Collectors.toList());
         }
 
-        // Sort by lesson date (newest first)
         allMessages.sort((m1, m2) -> m2.getLessons().getDate().compareTo(m1.getLessons().getDate()));
 
         return allMessages;

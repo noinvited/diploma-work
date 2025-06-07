@@ -313,4 +313,35 @@ public class MainController {
         }
         return "studentTasks";
     }
+
+    @GetMapping("/marks")
+    @PreAuthorize("hasAuthority('USER')")
+    public String getMarks(
+            @AuthenticationPrincipal User user,
+            Model model
+    ) {
+        Group studentGroup = studentService.getStudentGroup(user);
+        if (studentGroup != null) {
+
+        } else {
+            return "redirect:/teacherSchedule";
+        }
+        return "marks";
+    }
+
+
+    @GetMapping("/groups")
+    @PreAuthorize("hasAuthority('USER')")
+    public String getGroups(
+            @AuthenticationPrincipal User user,
+            Model model
+    ) {
+        Teacher teacher = teacherService.getTeacher(user);
+        if (teacher != null) {
+
+        } else {
+            return "redirect:/studentSchedule";
+        }
+        return "groups";
+    }
 }
