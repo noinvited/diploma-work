@@ -5,12 +5,6 @@
     <#if isStudent == 0>
         <h4>Для дальнейшей работы заполните данные о профиле и дождитесь получения статуса от администратора сайта.</h4>
     <#else>
-        <#if successMessage??>
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                ${successMessage}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        </#if>
         <#if errorMessage??>
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 ${errorMessage}

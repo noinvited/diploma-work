@@ -334,8 +334,8 @@ public class MainController {
             // Добавляем название группы
             model.addAttribute("group", studentGroup.getNameGroup());
             
-            // Получаем все дисциплины для группы
-            List<Discipline> disciplines = studentService.getAllDisciplines();
+            // Получаем дисциплины группы студента
+            List<Discipline> disciplines = studentService.getGroupDisciplines(studentGroup.getId());
             model.addAttribute("disciplines", disciplines);
             
             // Получаем оценки студента по всем дисциплинам
@@ -347,16 +347,53 @@ public class MainController {
         return "marks";
     }
 
-
     @GetMapping("/groups")
     @PreAuthorize("hasAuthority('USER')")
     public String getGroups(
             @AuthenticationPrincipal User user,
+            @RequestParam(required = false) Long selectedGroup,
+            @RequestParam(required = false) Long selectedDiscipline,
             Model model
     ) {
         Teacher teacher = teacherService.getTeacher(user);
         if (teacher != null) {
-
+            // Получаем список групп преподавателя
+            List<Group> groups = teacherService.getTeacherGroups(teacher.getId());
+            model.addAttribute("groups", groups);
+            
+            // Если выбрана конкретная группа
+            if (selectedGroup != null) {
+                Group group = groups.stream()
+                        .filter(g -> g.getId().equals(selectedGroup))
+                        .findFirst()
+                        .orElse(null);
+                if (group != null) {
+                    model.addAttribute("selectedGroup", group);
+                    
+                    // Получаем список дисциплин, которые преподаватель ведет у этой группы
+                    List<Discipline> groupDisciplines = teacherService.getTeacherGroupDisciplines(teacher.getId(), selectedGroup);
+                    model.addAttribute("groupDisciplines", groupDisciplines);
+                    
+                    // Если выбрана дисциплина, получаем список заданий
+                    if (selectedDiscipline != null) {
+                        Discipline discipline = groupDisciplines.stream()
+                                .filter(d -> d.getId().equals(selectedDiscipline))
+                                .findFirst()
+                                .orElse(null);
+                        if (discipline != null) {
+                            model.addAttribute("selectedDiscipline", discipline);
+                            
+                            // Получаем все задания для выбранной дисциплины и группы
+                            List<LessonMessage> tasks = teacherService.getGroupDisciplineTasks(selectedGroup, selectedDiscipline);
+                            model.addAttribute("tasks", tasks);
+                        }
+                    }
+                    
+                    // Получаем список студентов группы
+                    List<Student> students = teacherService.getGroupStudents(selectedGroup);
+                    model.addAttribute("students", students);
+                }
+            }
         } else {
             return "redirect:/studentSchedule";
         }

@@ -12,4 +12,5 @@ public interface TeacherGroupRepo extends JpaRepository<TeacherGroup, Long> {
     @Query("SELECT tg.group FROM TeacherGroup tg WHERE tg.teacher.id = :teacherId")
     List<Group> findAllGroupsByTeacherId(@Param("teacherId") Long teacherId);
     void deleteByTeacherId(Long teacherId);
+    boolean existsByTeacherIdAndGroupId(Long teacherId, Long groupId);
 }

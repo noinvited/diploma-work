@@ -25,6 +25,7 @@ public class StudentService {
     private final LessonMessageRepo lessonMessageRepo;
     private final StudentRepo studentRepo;
     private final ElectronicJournalRepo electronicJournalRepo;
+    private final GroupDisciplineRepo groupDisciplineRepo;
 
     public List<String> getDatesString(Integer shift){
         LocalDate today = LocalDate.now();
@@ -160,6 +161,13 @@ public class StudentService {
         allMessages.sort((m1, m2) -> m2.getLessons().getDate().compareTo(m1.getLessons().getDate()));
 
         return allMessages;
+    }
+
+    public List<Discipline> getGroupDisciplines(Long groupId) {
+        List<GroupDiscipline> groupDisciplines = groupDisciplineRepo.findByGroupId(groupId);
+        return groupDisciplines.stream()
+                .map(GroupDiscipline::getDiscipline)
+                .collect(Collectors.toList());
     }
 
     public List<Discipline> getAllDisciplines() {

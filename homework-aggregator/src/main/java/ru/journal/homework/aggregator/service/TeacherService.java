@@ -33,8 +33,11 @@ public class TeacherService {
     private final StatusTaskRepo statusTaskRepo;
     private final TeacherDisciplineRepo teacherDisciplineRepo;
     private final TeacherGroupRepo teacherGroupRepo;
+    private final StudentRepo studentRepo;
+    private final GroupDisciplineRepo groupDisciplineRepo;
+    private final ElectronicJournalRepo electronicJournalRepo;
 
-    public TeacherService(TeacherRepo teacherRepo, PairRepo pairRepo, LessonRepo lessonRepo, LessonMessageRepo lessonMessageRepo, TaskRepo taskRepo, StatusTaskRepo statusTaskRepo, TeacherDisciplineRepo teacherDisciplineRepo, TeacherGroupRepo teacherGroupRepo) {
+    public TeacherService(TeacherRepo teacherRepo, PairRepo pairRepo, LessonRepo lessonRepo, LessonMessageRepo lessonMessageRepo, TaskRepo taskRepo, StatusTaskRepo statusTaskRepo, TeacherDisciplineRepo teacherDisciplineRepo, TeacherGroupRepo teacherGroupRepo, StudentRepo studentRepo, GroupDisciplineRepo groupDisciplineRepo, ElectronicJournalRepo electronicJournalRepo) {
         this.teacherRepo = teacherRepo;
         this.pairRepo = pairRepo;
         this.lessonRepo = lessonRepo;
@@ -43,6 +46,9 @@ public class TeacherService {
         this.statusTaskRepo = statusTaskRepo;
         this.teacherDisciplineRepo = teacherDisciplineRepo;
         this.teacherGroupRepo = teacherGroupRepo;
+        this.studentRepo = studentRepo;
+        this.groupDisciplineRepo = groupDisciplineRepo;
+        this.electronicJournalRepo = electronicJournalRepo;
     }
 
     @Value("${upload.path}")
@@ -352,6 +358,39 @@ public class TeacherService {
         return teacherGroupRepo.findAllGroupsByTeacherId(teacherId);
     }
 
+    public List<Student> getGroupStudents(Long groupId) {
+        return studentRepo.findByGroupId(groupId);
+    }
+
+    public Student getStudent(Long studentId) {
+        return studentRepo.findById(studentId).orElse(null);
+    }
+
+    public boolean hasAccessToGroup(Long teacherId, Long groupId) {
+        return teacherGroupRepo.existsByTeacherIdAndGroupId(teacherId, groupId);
+    }
+
+    public List<Discipline> getGroupDisciplines(Long groupId) {
+        List<GroupDiscipline> groupDisciplines = groupDisciplineRepo.findByGroupId(groupId);
+        return groupDisciplines.stream()
+                .map(GroupDiscipline::getDiscipline)
+                .collect(Collectors.toList());
+    }
+
+    public Map<Long, List<ElectronicJournal>> getStudentMarks(Long studentId) {
+        // Получаем все записи из электронного журнала для студента
+        List<ElectronicJournal> journalEntries = electronicJournalRepo.findByStudentId(studentId);
+        
+        // Группируем оценки по дисциплинам
+        return journalEntries.stream()
+                .filter(entry -> entry.getTask() != null 
+                        && entry.getTask().getLessonMessage() != null 
+                        && entry.getTask().getLessonMessage().getLessons() != null)
+                .collect(Collectors.groupingBy(
+                        entry -> entry.getTask().getLessonMessage().getLessons().getDiscipline().getId()
+                ));
+    }
+
     public List<StatusTask> getAllStatusTasks() {
         return statusTaskRepo.findAll();
     }
@@ -403,5 +442,32 @@ public class TeacherService {
         allMessages.sort((m1, m2) -> m2.getLessons().getDate().compareTo(m1.getLessons().getDate()));
 
         return allMessages;
+    }
+
+    public List<Discipline> getTeacherGroupDisciplines(Long teacherId, Long groupId) {
+        // Получаем все дисциплины преподавателя
+        List<Discipline> teacherDisciplines = teacherDisciplineRepo.findAllDisciplinesByTeacherId(teacherId);
+        // Получаем все дисциплины группы
+        List<GroupDiscipline> groupDisciplines = groupDisciplineRepo.findByGroupId(groupId);
+        Set<Long> groupDisciplineIds = groupDisciplines.stream()
+                .map(gd -> gd.getDiscipline().getId())
+                .collect(Collectors.toSet());
+        
+        // Оставляем только те дисциплины, которые есть и у преподавателя, и у группы
+        return teacherDisciplines.stream()
+                .filter(d -> groupDisciplineIds.contains(d.getId()))
+                .collect(Collectors.toList());
+    }
+
+    public List<LessonMessage> getGroupDisciplineTasks(Long groupId, Long disciplineId) {
+        // Получаем все занятия для группы по дисциплине
+        List<Lesson> lessons = lessonRepo.findByGroupIdAndDisciplineId(groupId, disciplineId);
+        
+        // Получаем все сообщения для этих занятий и сортируем по дате
+        return lessons.stream()
+                .flatMap(lesson -> lessonMessageRepo.findByLessonsId(lesson.getId()).stream())
+                .filter(message -> message.getNeedToPerform()) // Только задания, которые нужно выполнить
+                .sorted(Comparator.comparing(message -> message.getLessons().getDate()))
+                .collect(Collectors.toList());
     }
 }

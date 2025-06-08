@@ -5,6 +5,13 @@
     <#if isStudent == 0>
         <h4>Для дальнейшей работы заполните данные о профиле и дождитесь получения статуса от администратора сайта.</h4>
     <#else>
+        <#if errorMessage??>
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                ${errorMessage}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </#if>
+
         <div class="card mb-5">
             <div class="card-header">
                 <div class="d-flex justify-content-between align-items-center">
