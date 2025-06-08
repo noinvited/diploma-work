@@ -33,6 +33,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 @Controller
 public class MainController {
@@ -330,7 +331,16 @@ public class MainController {
     ) {
         Group studentGroup = studentService.getStudentGroup(user);
         if (studentGroup != null) {
-
+            // Добавляем название группы
+            model.addAttribute("group", studentGroup.getNameGroup());
+            
+            // Получаем все дисциплины для группы
+            List<Discipline> disciplines = studentService.getAllDisciplines();
+            model.addAttribute("disciplines", disciplines);
+            
+            // Получаем оценки студента по всем дисциплинам
+            Map<Long, List<ElectronicJournal>> studentMarks = studentService.getStudentMarks(user);
+            model.addAttribute("studentMarks", studentMarks != null ? studentMarks : new HashMap<>());
         } else {
             return "redirect:/teacherSchedule";
         }

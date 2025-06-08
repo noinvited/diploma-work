@@ -23,6 +23,8 @@ public class StudentService {
     private final PairRepo pairRepo;
     private final GroupRepo groupRepo;
     private final LessonMessageRepo lessonMessageRepo;
+    private final StudentRepo studentRepo;
+    private final ElectronicJournalRepo electronicJournalRepo;
 
     public List<String> getDatesString(Integer shift){
         LocalDate today = LocalDate.now();
@@ -166,5 +168,25 @@ public class StudentService {
 
     public List<StatusTask> getAllStatusTasks(){
         return statusTaskRepo.findAll();
+    }
+
+    public Map<Long, List<ElectronicJournal>> getStudentMarks(User user) {
+        // Получаем студента
+        Student student = studentRepo.findStudentByUserId(user.getId());
+        if (student == null) {
+            return Collections.emptyMap();
+        }
+
+        // Получаем все записи из электронного журнала для студента
+        List<ElectronicJournal> journalEntries = electronicJournalRepo.findByStudentId(student.getId());
+        
+        // Группируем оценки по дисциплинам
+        return journalEntries.stream()
+                .filter(entry -> entry.getTask() != null 
+                        && entry.getTask().getLessonMessage() != null 
+                        && entry.getTask().getLessonMessage().getLessons() != null)
+                .collect(Collectors.groupingBy(
+                        entry -> entry.getTask().getLessonMessage().getLessons().getDiscipline().getId()
+                ));
     }
 }
