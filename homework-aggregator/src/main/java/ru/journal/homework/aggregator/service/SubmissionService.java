@@ -1,0 +1,170 @@
+package ru.journal.homework.aggregator.service;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import ru.journal.homework.aggregator.domain.*;
+import ru.journal.homework.aggregator.domain.dto.TaskSubmissionDto;
+import ru.journal.homework.aggregator.repo.*;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+public class SubmissionService {
+
+    @Autowired
+    private SubmissionRepo submissionRepo;
+
+    @Autowired
+    private SubmissionMessageRepo submissionMessageRepo;
+
+    @Autowired
+    private StatusTaskRepo statusTaskRepo;
+
+    @Autowired
+    private TaskRepo taskRepo;
+
+    @Autowired
+    private StudentRepo studentRepo;
+
+    @Autowired
+    private LessonMessageRepo lessonMessageRepo;
+
+    @Value("${upload.path}")
+    private String uploadPath;
+
+    //Получает задание и студента, проверяет права доступа
+    public TaskSubmissionDto getTaskSubmissionData(Long taskId, User user) {
+        TaskSubmissionDto result = new TaskSubmissionDto();
+
+        Optional<Task> taskOpt = taskRepo.findById(taskId);
+        if (taskOpt.isEmpty()) {
+            result.setError("Задание не найдено");
+            return result;
+        }
+
+        Boolean studentExists = studentRepo.existsByUserId(user.getId());
+        if (!studentExists) {
+            result.setError("Доступ запрещен");
+            return result;
+        }
+
+        Task task = taskOpt.get();
+        Student student = studentRepo.findStudentByUserId(user.getId());
+        Submission submission = getOrCreateSubmission(task, student);
+        List<SubmissionMessage> messages = getSubmissionMessages(submission);
+
+        result.setTask(task);
+        result.setStudent(student);
+        result.setSubmission(submission);
+        result.setMessages(messages);
+
+        return result;
+    }
+
+    //Получает существующую сдачу задания или создает новую
+    public Submission getOrCreateSubmission(Task task, Student student) {
+        return submissionRepo.findByStudentIdAndTaskId(student.getId(), task.getId())
+                .orElseGet(() -> {
+                    Submission submission = new Submission();
+                    submission.setTask(task);
+                    submission.setStudent(student);
+                    submission.setStatusTask(task.getLessonMessage().getStatusTask());
+                    submission.setSubmissionDate(Instant.now());
+                    submission.setLastUpdateDate(Instant.now());
+                    return submissionRepo.save(submission);
+                });
+    }
+
+    //Получает историю сообщений для сдачи задания
+    public List<SubmissionMessage> getSubmissionMessages(Submission submission) {
+        return submissionMessageRepo.findBySubmission(submission);
+    }
+
+    //Сохраняет новое сообщение без изменения статуса
+    public void saveMessage(Task task, Student student, String messageText, MultipartFile[] files) throws IOException {
+        Submission submission = getOrCreateSubmission(task, student);
+        
+        // Сохраняем файлы
+        String filesString = null;
+        if (files != null && files.length > 0) {
+            List<String> fileNames = new ArrayList<>();
+            for (MultipartFile file : files) {
+                if (!file.isEmpty()) {
+                    String fileName = saveFile(file, submission.getId());
+                    fileNames.add(fileName);
+                }
+            }
+            filesString = String.join(";", fileNames);
+        }
+
+        // Создаем сообщение
+        SubmissionMessage message = new SubmissionMessage();
+        message.setSubmission(submission);
+        message.setMessageText(messageText);
+        message.setFiles(filesString);
+        message.setCreatedAt(Instant.now());
+        
+        submissionMessageRepo.save(message);
+
+        // Обновляем дату последнего обновления сдачи
+        submission.setLastUpdateDate(Instant.now());
+        submissionRepo.save(submission);
+    }
+
+    //Отправляет задание на проверку
+    public void submitForReview(Task task, Student student, String messageText, MultipartFile[] files) throws IOException {
+        // Сохраняем сообщение
+        saveMessage(task, student, messageText, files);
+        
+        // Получаем сдачу задания
+        Submission submission = getOrCreateSubmission(task, student);
+        
+        // Меняем статус на "На проверке"
+        Optional<StatusTask> statusTask = statusTaskRepo.findByStatus("На проверке");
+        if (statusTask.isPresent()) {
+            LessonMessage lessonMessage = task.getLessonMessage();
+            lessonMessage.setStatusTask(statusTask.get());
+            lessonMessageRepo.save(lessonMessage);
+            submission.setStatusTask(statusTask.get());
+            submission.setLastUpdateDate(Instant.now());
+            submissionRepo.save(submission);
+        }
+    }
+
+    //Сохраняет файл и возвращает его относительный путь
+    private String saveFile(MultipartFile file, Long submissionId) throws IOException {
+        if (file != null && !file.isEmpty()) {
+            // Создаем директорию, если её нет
+            Path submissionDir = Paths.get(uploadPath, submissionId.toString(), "student");
+            if (!Files.exists(submissionDir)) {
+                Files.createDirectories(submissionDir);
+            }
+
+            String originalFilename = file.getOriginalFilename();
+            Path filePath = submissionDir.resolve(originalFilename);
+            
+            // Если файл с таким именем уже существует, добавляем уникальный префикс
+            if (Files.exists(filePath)) {
+                String nameWithoutExt = originalFilename.substring(0, originalFilename.lastIndexOf('.'));
+                String extension = originalFilename.substring(originalFilename.lastIndexOf('.'));
+                originalFilename = nameWithoutExt + "_" + UUID.randomUUID().toString().substring(0, 8) + extension;
+                filePath = submissionDir.resolve(originalFilename);
+            }
+
+            Files.copy(file.getInputStream(), filePath);
+
+            return submissionId + "/student/" + originalFilename;
+        }
+        return null;
+    }
+}

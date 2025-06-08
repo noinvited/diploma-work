@@ -19,8 +19,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.journal.homework.aggregator.domain.*;
+import ru.journal.homework.aggregator.domain.dto.TaskSubmissionDto;
 import ru.journal.homework.aggregator.service.StudentService;
 import ru.journal.homework.aggregator.service.TeacherService;
+import ru.journal.homework.aggregator.service.SubmissionService;
+import ru.journal.homework.aggregator.repo.TaskRepo;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -28,7 +31,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +41,12 @@ public class MainController {
     
     @Autowired
     private TeacherService teacherService;
+
+    @Autowired
+    private SubmissionService submissionService;
+
+    @Autowired
+    private TaskRepo taskRepo;
 
     @Value("${upload.path}")
     private String uploadPath;
@@ -343,5 +351,83 @@ public class MainController {
             return "redirect:/studentSchedule";
         }
         return "groups";
+    }
+
+    @GetMapping("/submit/{messageId}")
+    @PreAuthorize("hasAuthority('USER')")
+    public String showSubmitPage(@AuthenticationPrincipal User user,
+                               @PathVariable Long messageId, 
+                               @RequestParam(required = false) String returnUrl,
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
+        
+        Task task = taskRepo.findByLessonMessageId(messageId);
+        if (task == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Задание не найдено");
+            return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
+        }
+
+        TaskSubmissionDto data = submissionService.getTaskSubmissionData(task.getId(), user);
+        
+        if (data.hasError()) {
+            redirectAttributes.addFlashAttribute("errorMessage", data.getError());
+            return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
+        }
+
+        model.addAttribute("task", data.getTask());
+        model.addAttribute("submission", data.getSubmission());
+        model.addAttribute("messages", data.getMessages());
+        model.addAttribute("returnUrl", returnUrl);
+        
+        // Добавляем сообщения из flash-атрибутов
+        if (model.getAttribute("errorMessage") == null && redirectAttributes.getFlashAttributes().containsKey("errorMessage")) {
+            model.addAttribute("errorMessage", redirectAttributes.getFlashAttributes().get("errorMessage"));
+        }
+        if (model.getAttribute("successMessage") == null && redirectAttributes.getFlashAttributes().containsKey("successMessage")) {
+            model.addAttribute("successMessage", redirectAttributes.getFlashAttributes().get("successMessage"));
+        }
+
+        return "submit";
+    }
+
+    @PostMapping("/submit/{messageId}")
+    @PreAuthorize("hasAuthority('USER')")
+    public String submitTask(
+            @AuthenticationPrincipal User user,
+            @PathVariable Long messageId,
+            @RequestParam String messageText,
+            @RequestParam(required = false) MultipartFile[] files,
+            @RequestParam String action,
+            @RequestParam(required = false) String returnUrl,
+            RedirectAttributes redirectAttributes
+    ) {
+        Task task = taskRepo.findByLessonMessageId(messageId);
+        if (task == null) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Задание не найдено");
+            return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
+        }
+
+        TaskSubmissionDto data = submissionService.getTaskSubmissionData(task.getId(), user);
+        
+        if (data.hasError()) {
+            redirectAttributes.addFlashAttribute("errorMessage", data.getError());
+            return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
+        }
+
+        try {
+            if ("submit".equals(action)) {
+                // Отправка на проверку
+                submissionService.submitForReview(data.getTask(), data.getStudent(), messageText, files);
+                redirectAttributes.addFlashAttribute("successMessage", "Задание отправлено на проверку");
+            } else {
+                // Сохранение сообщения
+                submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files);
+                redirectAttributes.addFlashAttribute("successMessage", "Сообщение сохранено");
+            }
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Произошла ошибка: " + e.getMessage());
+        }
+
+        return "redirect:/submit/" + messageId + (returnUrl != null ? "?returnUrl=" + returnUrl : "");
     }
 }

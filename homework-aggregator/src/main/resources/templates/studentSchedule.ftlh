@@ -121,12 +121,20 @@
                                                     </#if>
                                                 </div>
                                             </#if>
+                                            <#if message.needToPerform>
+                                                <div class="mt-3 pt-3 border-top text-end">
+                                                    <a href="/submit/${message.id}?returnUrl=/studentSchedule?weekShift=${weekShift}" class="btn btn-success">
+                                                        <i class="bi bi-check2-circle"></i> Сдать задание
+                                                    </a>
+                                                </div>
+                                            </#if>
                                         </div>
                                     </div>
                                 </#list>
                             </#if>
                         </div>
                     </div>
+                    
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                     </div>

@@ -2,6 +2,13 @@
 <#include "parts/securityHlpr.ftlh">
 
 <@c.page>
+    <#if errorMessage??>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            ${errorMessage}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    </#if>
+
     <div class="mb-4">
         <a class="btn btn-outline-primary" href="/studentSchedule">
             Вернуться к расписанию
