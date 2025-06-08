@@ -116,6 +116,15 @@
                                     </#if>
                                 </div>
                             </div>
+
+                            <#if message.needToPerform>
+                                <div class="mt-3 pt-3 border-top text-end">
+                                    <a href="/groups?selectedDiscipline=${message.lessons.discipline.id}&selectedGroup=${message.lessons.group.id}"
+                                       class="btn btn-success">
+                                        <i class="bi bi-check2-circle"></i> Проверить задание
+                                    </a>
+                                </div>
+                            </#if>
                         </div>
                     </#list>
                 </div>

@@ -73,7 +73,22 @@
                                 <#if selectedDiscipline?? && tasks?? && tasks?has_content>
                                     <tr>
                                         <#list tasks as task>
-                                            <th class="text-center">${task.lessons.date?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}</th>
+                                            <th class="text-center">
+                                                <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#viewMessageModal"
+                                                   data-lesson-id="${task.lessons.id}"
+                                                   data-lesson-key="${task.lessons.date?datetime("yyyy-MM-dd")?string('yyyy-MM-dd')}_${task.lessons.pair.id}"
+                                                   data-discipline="${selectedDiscipline.nameDiscipline}"
+                                                   data-date="${task.lessons.date?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}"
+                                                   data-pair="${task.lessons.pair.id}"
+                                                   data-task-text="${task.textMessage!''}"
+                                                   data-deadline="${task.formattedDeadline!''}"
+                                                   data-need-perform="${task.needToPerform?string}"
+                                                   data-files="${task.file!''}">
+                                                    ${task.lessons.date?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}
+                                                    <br>
+                                                    (пара №${task.lessons.pair.id})
+                                                </a>
+                                            </th>
                                         </#list>
                                     </tr>
                                 </#if>
@@ -103,6 +118,97 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Модальное окно для просмотра информации о задании -->
+                    <div class="modal fade" id="viewMessageModal" tabindex="-1" aria-labelledby="viewMessageModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="viewMessageModalLabel">Информация о задании</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="mb-3">
+                                        <label class="form-label">Дисциплина: <span id="viewModalDiscipline"></span></label><br>
+                                        <label class="form-label">Дата: <span id="viewModalDate"></span>, пара №<span id="viewModalPairNumber"></span></label>
+                                    </div>
+                                    <div class="card mb-3">
+                                        <div class="card-body">
+                                            <p class="card-text" id="modalTaskText"></p>
+                                            <div id="modalFiles" style="display: none;">
+                                                <p class="mb-1"><strong>Прикрепленные файлы:</strong></p>
+                                                <div id="filesList"></div>
+                                            </div>
+                                            <div class="mt-2" id="modalBadges">
+                                                <span class="badge bg-info" id="deadlineBadge" style="display: none;">
+                                                    <i class="bi bi-clock"></i> Срок: <span id="modalDeadline"></span>
+                                                </span>
+                                                <span class="badge bg-warning text-dark" id="needPerformBadge" style="display: none;">
+                                                    <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <script>
+                        document.addEventListener('DOMContentLoaded', function() {
+                            const viewMessageModal = document.getElementById('viewMessageModal');
+                            
+                            viewMessageModal.addEventListener('show.bs.modal', function(event) {
+                                const button = event.relatedTarget;
+                                const discipline = button.getAttribute('data-discipline');
+                                const date = button.getAttribute('data-date');
+                                const pair = button.getAttribute('data-pair');
+                                const taskText = button.getAttribute('data-task-text');
+                                const deadline = button.getAttribute('data-deadline');
+                                const needPerform = button.getAttribute('data-need-perform') === 'true';
+                                const files = button.getAttribute('data-files');
+
+                                document.getElementById('viewModalDiscipline').textContent = discipline;
+                                document.getElementById('viewModalDate').textContent = date;
+                                document.getElementById('viewModalPairNumber').textContent = pair;
+                                document.getElementById('modalTaskText').textContent = taskText || 'Текст задания отсутствует';
+
+                                // Обработка срока выполнения
+                                const deadlineBadge = document.getElementById('deadlineBadge');
+                                if (deadline) {
+                                    document.getElementById('modalDeadline').textContent = deadline;
+                                    deadlineBadge.style.display = 'inline-block';
+                                } else {
+                                    deadlineBadge.style.display = 'none';
+                                }
+
+                                // Обработка метки "Требуется выполнение"
+                                const needPerformBadge = document.getElementById('needPerformBadge');
+                                needPerformBadge.style.display = needPerform ? 'inline-block' : 'none';
+
+                                // Обработка файлов
+                                const modalFiles = document.getElementById('modalFiles');
+                                const filesList = document.getElementById('filesList');
+                                if (files && files.trim() !== '') {
+                                    filesList.innerHTML = '';
+                                    files.split(';').forEach(fileName => {
+                                        const fileLink = document.createElement('a');
+                                        fileLink.href = '/files/' + fileName;
+                                        fileLink.className = 'btn btn-sm btn-outline-primary mb-1 me-1';
+                                        const shortName = fileName.substring(fileName.lastIndexOf('/') + 1);
+                                    fileLink.innerHTML = '<i class="bi bi-download"></i> ' + shortName;
+                                        filesList.appendChild(fileLink);
+                                    });
+                                    modalFiles.style.display = 'block';
+                                } else {
+                                    modalFiles.style.display = 'none';
+                                }
+                            });
+                        });
+                    </script>
                 <#else>
                     <p class="text-muted mb-0">В данной группе нет студентов</p>
                 </#if>
