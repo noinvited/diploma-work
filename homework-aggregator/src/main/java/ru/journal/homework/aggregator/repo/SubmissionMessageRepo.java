@@ -7,5 +7,5 @@ import ru.journal.homework.aggregator.domain.SubmissionMessage;
 import java.util.List;
 
 public interface SubmissionMessageRepo extends JpaRepository<SubmissionMessage, Long> {
-    List<SubmissionMessage> findBySubmission(Submission submission);
+    List<SubmissionMessage> findBySubmissionOrderByCreatedAtAsc(Submission submission);
 } 

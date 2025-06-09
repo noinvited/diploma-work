@@ -221,12 +221,15 @@ public class MainController {
         return "redirect:/teacherSchedule?weekShift=" + weekShift;
     }
 
-    @GetMapping("/files/{lessonId}/teacher/{filename:.+}")
+    @GetMapping("/files/{id}/{type}/{filename:.+}")
     @ResponseBody
     @PreAuthorize("hasAuthority('USER')")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long lessonId, @PathVariable String filename) {
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable Long id,
+            @PathVariable String type,
+            @PathVariable String filename) {
         try {
-            Path filePath = Paths.get(uploadPath, lessonId.toString(), "teacher", filename);
+            Path filePath = Paths.get(uploadPath, id.toString(), type, filename);
             Resource resource = new UrlResource(filePath.toUri());
 
             if (resource.exists()) {
@@ -474,6 +477,7 @@ public class MainController {
             @RequestParam(required = false) String returnUrl,
             @RequestParam(required = false) Long studentId,
             @RequestParam(required = false) Integer mark,
+            @RequestParam(required = false) Boolean needsRevision,
             RedirectAttributes redirectAttributes
     ) {
         Task task = submissionService.getTaskByLessonMessage(messageId);
@@ -492,6 +496,10 @@ public class MainController {
         try {
             if (data.isTeacher()) {
                 if ("grade".equals(action)) {
+                    if (needsRevision != null && needsRevision) {
+                        redirectAttributes.addFlashAttribute("errorMessage", "Нельзя выставить оценку, если требуются доработки");
+                        return "redirect:/submit/" + messageId + (returnUrl != null ? "?returnUrl=" + returnUrl : "") + (studentId != null ? "&studentId=" + studentId : "");
+                    }
                     if (mark == null || mark < 2 || mark > 5) {
                         redirectAttributes.addFlashAttribute("errorMessage", "Некорректная оценка");
                         return "redirect:/submit/" + messageId + (returnUrl != null ? "?returnUrl=" + returnUrl : "") + (studentId != null ? "&studentId=" + studentId : "");
@@ -501,7 +509,7 @@ public class MainController {
                     redirectAttributes.addFlashAttribute("successMessage", "Оценка выставлена");
                 } else {
                     // Сохранение комментария преподавателя
-                    submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files, user, true);
+                    submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files, user, true, needsRevision != null && needsRevision);
                     redirectAttributes.addFlashAttribute("successMessage", "Комментарий сохранен");
                 }
             } else {
@@ -511,7 +519,7 @@ public class MainController {
                     redirectAttributes.addFlashAttribute("successMessage", "Задание отправлено на проверку");
                 } else {
                     // Сохранение сообщения студента
-                    submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files, user, false);
+                    submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files, user, false, false);
                     redirectAttributes.addFlashAttribute("successMessage", "Сообщение сохранено");
                 }
             }

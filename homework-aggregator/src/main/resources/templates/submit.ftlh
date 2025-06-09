@@ -86,21 +86,26 @@
                     <div class="submission-messages">
                         <#if messages?? && messages?has_content>
                             <#list messages as message>
-                                <div class="message mb-3 p-3 rounded ${message.isTeacherMessage?string('bg-light border', 'bg-primary bg-opacity-10')}">
-                                    <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <strong>${message.isTeacherMessage?string('Преподаватель', student.user.fio!student.user.username)}</strong>
-                                        <small class="text-muted">${message.createdAt?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd HH:mm:ss")?string("dd.MM.yyyy HH:mm")}</small>
-                                    </div>
-                                    <p class="mb-2">${message.messageText}</p>
-                                    <#if message.files?? && message.files?has_content>
-                                        <div class="mt-2">
-                                            <#list message.files?split(";") as fileName>
-                                                <a href="/files/${fileName}" class="btn btn-sm btn-outline-primary me-2">
-                                                    <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
-                                                </a>
-                                            </#list>
+                                <#assign isCurrentUser = (user.id == message.author.id)>
+                                <div class="message mb-3 d-flex ${isCurrentUser?string('justify-content-end', 'justify-content-start')}">
+                                    <div class="message-content p-3 rounded ${isCurrentUser?string('bg-primary bg-opacity-25', 'bg-light')} mw-75">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <strong class="text-dark">${message.author.fio!message.author.username}</strong>
+                                            <small class="text-muted ms-3">
+                                                ${message.createdAt?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd HH:mm:ss")?string("dd.MM.yyyy HH:mm")}
+                                            </small>
                                         </div>
-                                    </#if>
+                                        <p class="mb-2 ${isCurrentUser?string('text-dark', '')}">${message.messageText}</p>
+                                        <#if message.files?? && message.files?has_content>
+                                            <div class="mt-2">
+                                                <#list message.files?split(";") as fileName>
+                                                    <a href="/files/${fileName}" class="btn btn-sm ${isCurrentUser?string('btn-outline-primary', 'btn-outline-secondary')} me-2">
+                                                        <i class="bi bi-download"></i> ${fileName?keep_after_last("/")}
+                                                    </a>
+                                                </#list>
+                                            </div>
+                                        </#if>
+                                    </div>
                                 </div>
                             </#list>
                         <#else>
@@ -129,8 +134,14 @@
                         </div>
                         <#if isTeacher>
                             <div class="mb-3">
-                                <label for="mark" class="form-label">Оценка</label>
-                                <input type="number" class="form-control" id="mark" name="mark" min="2" max="5" step="1">
+                                <div class="form-check mb-3">
+                                    <input type="checkbox" class="form-check-input" id="needsRevision" name="needsRevision" onchange="toggleMarkInput()">
+                                    <label class="form-check-label" for="needsRevision">Требуются доработки</label>
+                                </div>
+                                <div id="markInputGroup">
+                                    <label for="mark" class="form-label">Оценка</label>
+                                    <input type="number" class="form-control" id="mark" name="mark" min="2" max="5" step="1">
+                                </div>
                             </div>
                             <div class="d-flex justify-content-between">
                                 <button type="submit" name="action" value="comment" class="btn btn-primary" onclick="return validateTeacherComment()">
@@ -164,6 +175,19 @@
     <div class="mb-5"></div>
 
     <script>
+        function toggleMarkInput() {
+            const needsRevision = document.getElementById('needsRevision').checked;
+            const markInputGroup = document.getElementById('markInputGroup');
+            const mark = document.getElementById('mark');
+            
+            if (needsRevision) {
+                markInputGroup.style.display = 'none';
+                mark.value = '';
+            } else {
+                markInputGroup.style.display = 'block';
+            }
+        }
+
         function validateStudentSubmission() {
             const messageText = document.getElementById('messageText').value.trim();
             const files = document.getElementById('files').files;
@@ -178,6 +202,7 @@
         function validateTeacherComment() {
             const messageText = document.getElementById('messageText').value.trim();
             const files = document.getElementById('files').files;
+            const needsRevision = document.getElementById('needsRevision').checked;
             
             if (messageText === '' && files.length === 0) {
                 alert('Необходимо заполнить текст комментария или прикрепить файл');
@@ -187,6 +212,12 @@
         }
 
         function validateTeacherGrade() {
+            const needsRevision = document.getElementById('needsRevision').checked;
+            if (needsRevision) {
+                alert('Нельзя выставить оценку, если требуются доработки');
+                return false;
+            }
+            
             const mark = document.getElementById('mark').value;
             
             if (!mark) {

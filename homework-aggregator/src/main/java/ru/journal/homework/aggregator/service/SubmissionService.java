@@ -89,6 +89,8 @@ public class SubmissionService {
 
         Submission submission = getOrCreateSubmission(task, student);
         List<SubmissionMessage> messages = getSubmissionMessages(submission);
+        messages.stream().forEach(msg -> msg.setCreatedAt(msg.getCreatedAt().plusSeconds(60*60*3)));
+
         ElectronicJournal journal = electronicJournalRepo.findByStudentIdAndTaskId(student.getId(), task.getId()).orElse(null);
 
         result.setTask(task);
@@ -107,20 +109,19 @@ public class SubmissionService {
                     Submission submission = new Submission();
                     submission.setTask(task);
                     submission.setStudent(student);
-                    submission.setStatusTask(task.getLessonMessage().getStatusTask());
                     submission.setSubmissionDate(Instant.now());
-                    submission.setLastUpdateDate(Instant.now());
+                    
                     return submissionRepo.save(submission);
                 });
     }
 
     //Получает историю сообщений для сдачи задания
     public List<SubmissionMessage> getSubmissionMessages(Submission submission) {
-        return submissionMessageRepo.findBySubmission(submission);
+        return submissionMessageRepo.findBySubmissionOrderByCreatedAtAsc(submission);
     }
 
     //Сохраняет новое сообщение без изменения статуса
-    public void saveMessage(Task task, Student student, String messageText, MultipartFile[] files, User author, boolean isTeacherMessage) throws IOException {
+    public void saveMessage(Task task, Student student, String messageText, MultipartFile[] files, User author, boolean isTeacherMessage, boolean needsRevision) throws IOException {
         Submission submission = getOrCreateSubmission(task, student);
         
         // Сохраняем файлы
@@ -136,16 +137,27 @@ public class SubmissionService {
             filesString = String.join(";", fileNames);
         }
 
-        // Создаем сообщение
+        // Создаем сообщение с учетом московского времени
         SubmissionMessage message = new SubmissionMessage();
         message.setSubmission(submission);
         message.setMessageText(messageText);
         message.setFiles(filesString);
-        message.setCreatedAt(Instant.now());
         message.setAuthor(author);
         message.setIsTeacherMessage(isTeacherMessage);
+        message.setCreatedAt(Instant.now());
         
         submissionMessageRepo.save(message);
+
+        // Если требуются доработки, меняем статус
+        if (needsRevision) {
+            Optional<StatusTask> statusTask = statusTaskRepo.findByStatus("Требуются доработки");
+            if (statusTask.isPresent()) {
+                LessonMessage lessonMessage = task.getLessonMessage();
+                lessonMessage.setStatusTask(statusTask.get());
+                lessonMessageRepo.save(lessonMessage);
+                submission.setStatusTask(statusTask.get());
+            }
+        }
 
         // Обновляем дату последнего обновления сдачи
         submission.setLastUpdateDate(Instant.now());
@@ -155,7 +167,7 @@ public class SubmissionService {
     //Отправляет задание на проверку
     public void submitForReview(Task task, Student student, String messageText, MultipartFile[] files, User author) throws IOException {
         // Сохраняем сообщение
-        saveMessage(task, student, messageText, files, author, false);
+        saveMessage(task, student, messageText, files, author, false, false);
         
         // Получаем сдачу задания
         Submission submission = getOrCreateSubmission(task, student);
@@ -167,7 +179,9 @@ public class SubmissionService {
             lessonMessage.setStatusTask(statusTask.get());
             lessonMessageRepo.save(lessonMessage);
             submission.setStatusTask(statusTask.get());
+
             submission.setLastUpdateDate(Instant.now());
+            
             submissionRepo.save(submission);
         }
     }
@@ -175,7 +189,7 @@ public class SubmissionService {
     //Выставляет оценку за задание
     public void gradeSubmission(Task task, Student student, String messageText, MultipartFile[] files, User author, Integer mark) throws IOException {
         // Сохраняем сообщение
-        saveMessage(task, student, messageText, files, author, true);
+        saveMessage(task, student, messageText, files, author, true, false);
         
         // Получаем сдачу задания
         Submission submission = getOrCreateSubmission(task, student);
@@ -197,7 +211,9 @@ public class SubmissionService {
             lessonMessage.setStatusTask(statusTask.get());
             lessonMessageRepo.save(lessonMessage);
             submission.setStatusTask(statusTask.get());
+
             submission.setLastUpdateDate(Instant.now());
+            
             submissionRepo.save(submission);
         }
     }
