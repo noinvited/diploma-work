@@ -371,7 +371,7 @@ public class TeacherService {
     }
 
     public ElectronicJournal getElectronicJournalByStudentIdAndTaskId(Long studentId, Long taskId){
-        return electronicJournalRepo.findByStudentIdAndTaskId(studentId, taskId).get();
+        return electronicJournalRepo.findByStudentIdAndTaskId(studentId, taskId).orElse(null);
     }
 
     public List<LessonMessage> getFilteredMessages(

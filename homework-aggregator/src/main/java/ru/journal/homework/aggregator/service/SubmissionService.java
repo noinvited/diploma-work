@@ -229,4 +229,8 @@ public class SubmissionService {
         }
         return null;
     }
+
+    public Task getTaskByLessonMessage(Long lessonMessageId){
+        return taskRepo.findByLessonMessage(lessonMessageRepo.findById(lessonMessageId).get());
+    }
 }

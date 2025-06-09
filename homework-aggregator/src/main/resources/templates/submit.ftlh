@@ -89,7 +89,7 @@
                                 <div class="message mb-3 p-3 rounded ${message.isTeacherMessage?string('bg-light border', 'bg-primary bg-opacity-10')}">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <strong>${message.isTeacherMessage?string('Преподаватель', student.user.fio!student.user.username)}</strong>
-                                        <small class="text-muted">${message.createdAt?string('dd.MM.yyyy HH:mm')}</small>
+                                        <small class="text-muted">${message.createdAt?replace("Z", "")?replace("T", " ")?datetime("yyyy-MM-dd HH:mm:ss")?string("dd.MM.yyyy HH:mm")}</small>
                                     </div>
                                     <p class="mb-2">${message.messageText}</p>
                                     <#if message.files?? && message.files?has_content>
@@ -118,7 +118,7 @@
                     <h5 class="card-title mb-0"><#if isTeacher>Проверка задания<#else>Отправка решения</#if></h5>
                 </div>
                 <div class="card-body">
-                    <form action="/submit/${task.id}${returnUrl???then('?returnUrl=' + returnUrl, '')}" method="post" enctype="multipart/form-data">
+                    <form action="/submit/${task.lessonMessage.id}${returnUrl???then('?returnUrl=' + returnUrl, '')}" method="post" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="messageText" class="form-label">Сообщение</label>
                             <textarea class="form-control" id="messageText" name="messageText" rows="3" required></textarea>

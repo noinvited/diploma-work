@@ -430,7 +430,7 @@ public class MainController {
                                Model model,
                                RedirectAttributes redirectAttributes) {
         
-        Task task = teacherService.getTaskByLessonMessage(messageId);
+        Task task = submissionService.getTaskByLessonMessage(messageId);
         if (task == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Задание не найдено");
             return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
@@ -476,7 +476,7 @@ public class MainController {
             @RequestParam(required = false) Integer mark,
             RedirectAttributes redirectAttributes
     ) {
-        Task task = teacherService.getTaskByLessonMessage(messageId);
+        Task task = submissionService.getTaskByLessonMessage(messageId);
         if (task == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Задание не найдено");
             return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
