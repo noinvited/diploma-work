@@ -37,13 +37,19 @@ public class SubmissionService {
     private StudentRepo studentRepo;
 
     @Autowired
+    private TeacherRepo teacherRepo;
+
+    @Autowired
+    private ElectronicJournalRepo electronicJournalRepo;
+
+    @Autowired
     private LessonMessageRepo lessonMessageRepo;
 
     @Value("${upload.path}")
     private String uploadPath;
 
-    //Получает задание и студента, проверяет права доступа
-    public TaskSubmissionDto getTaskSubmissionData(Long taskId, User user) {
+    //Получает задание и пользователя, проверяет права доступа
+    public TaskSubmissionDto getTaskSubmissionData(Long taskId, User user, Long studentId) {
         TaskSubmissionDto result = new TaskSubmissionDto();
 
         Optional<Task> taskOpt = taskRepo.findById(taskId);
@@ -52,21 +58,44 @@ public class SubmissionService {
             return result;
         }
 
-        Boolean studentExists = studentRepo.existsByUserId(user.getId());
-        if (!studentExists) {
-            result.setError("Доступ запрещен");
-            return result;
+        Task task = taskOpt.get();
+        Student student;
+        boolean isTeacher = teacherRepo.existsByUserId(user.getId());
+
+        if (isTeacher) {
+            Teacher teacher = teacherRepo.findTeacherByUserId(user.getId());
+            if (!task.getTeacher().getId().equals(teacher.getId())) {
+                result.setError("Доступ запрещен");
+                return result;
+            }
+            if (studentId == null) {
+                result.setError("ID студента не указан");
+                return result;
+            }
+            student = studentRepo.findById(studentId).orElse(null);
+            if (student == null) {
+                result.setError("Студент не найден");
+                return result;
+            }
+            result.setTeacher(true);
+        } else {
+            Boolean studentExists = studentRepo.existsByUserId(user.getId());
+            if (!studentExists) {
+                result.setError("Доступ запрещен");
+                return result;
+            }
+            student = studentRepo.findStudentByUserId(user.getId());
         }
 
-        Task task = taskOpt.get();
-        Student student = studentRepo.findStudentByUserId(user.getId());
         Submission submission = getOrCreateSubmission(task, student);
         List<SubmissionMessage> messages = getSubmissionMessages(submission);
+        ElectronicJournal journal = electronicJournalRepo.findByStudentIdAndTaskId(student.getId(), task.getId()).orElse(null);
 
         result.setTask(task);
         result.setStudent(student);
         result.setSubmission(submission);
         result.setMessages(messages);
+        result.setJournal(journal);
 
         return result;
     }
@@ -91,7 +120,7 @@ public class SubmissionService {
     }
 
     //Сохраняет новое сообщение без изменения статуса
-    public void saveMessage(Task task, Student student, String messageText, MultipartFile[] files) throws IOException {
+    public void saveMessage(Task task, Student student, String messageText, MultipartFile[] files, User author, boolean isTeacherMessage) throws IOException {
         Submission submission = getOrCreateSubmission(task, student);
         
         // Сохраняем файлы
@@ -100,7 +129,7 @@ public class SubmissionService {
             List<String> fileNames = new ArrayList<>();
             for (MultipartFile file : files) {
                 if (!file.isEmpty()) {
-                    String fileName = saveFile(file, submission.getId());
+                    String fileName = saveFile(file, submission.getId(), isTeacherMessage);
                     fileNames.add(fileName);
                 }
             }
@@ -113,6 +142,8 @@ public class SubmissionService {
         message.setMessageText(messageText);
         message.setFiles(filesString);
         message.setCreatedAt(Instant.now());
+        message.setAuthor(author);
+        message.setIsTeacherMessage(isTeacherMessage);
         
         submissionMessageRepo.save(message);
 
@@ -122,9 +153,9 @@ public class SubmissionService {
     }
 
     //Отправляет задание на проверку
-    public void submitForReview(Task task, Student student, String messageText, MultipartFile[] files) throws IOException {
+    public void submitForReview(Task task, Student student, String messageText, MultipartFile[] files, User author) throws IOException {
         // Сохраняем сообщение
-        saveMessage(task, student, messageText, files);
+        saveMessage(task, student, messageText, files, author, false);
         
         // Получаем сдачу задания
         Submission submission = getOrCreateSubmission(task, student);
@@ -141,11 +172,42 @@ public class SubmissionService {
         }
     }
 
+    //Выставляет оценку за задание
+    public void gradeSubmission(Task task, Student student, String messageText, MultipartFile[] files, User author, Integer mark) throws IOException {
+        // Сохраняем сообщение
+        saveMessage(task, student, messageText, files, author, true);
+        
+        // Получаем сдачу задания
+        Submission submission = getOrCreateSubmission(task, student);
+        
+        // Создаем или обновляем запись в электронном журнале
+        ElectronicJournal journal = electronicJournalRepo.findByStudentIdAndTaskId(student.getId(), task.getId())
+                .orElse(new ElectronicJournal());
+        
+        journal.setStudent(student);
+        journal.setTask(task);
+        journal.setMark(mark);
+        
+        electronicJournalRepo.save(journal);
+        
+        // Меняем статус на "Проверено"
+        Optional<StatusTask> statusTask = statusTaskRepo.findByStatus("Проверено");
+        if (statusTask.isPresent()) {
+            LessonMessage lessonMessage = task.getLessonMessage();
+            lessonMessage.setStatusTask(statusTask.get());
+            lessonMessageRepo.save(lessonMessage);
+            submission.setStatusTask(statusTask.get());
+            submission.setLastUpdateDate(Instant.now());
+            submissionRepo.save(submission);
+        }
+    }
+
     //Сохраняет файл и возвращает его относительный путь
-    private String saveFile(MultipartFile file, Long submissionId) throws IOException {
+    private String saveFile(MultipartFile file, Long submissionId, boolean isTeacherFile) throws IOException {
         if (file != null && !file.isEmpty()) {
             // Создаем директорию, если её нет
-            Path submissionDir = Paths.get(uploadPath, submissionId.toString(), "student");
+            String subdir = isTeacherFile ? "teacher" : "student";
+            Path submissionDir = Paths.get(uploadPath, submissionId.toString(), subdir);
             if (!Files.exists(submissionDir)) {
                 Files.createDirectories(submissionDir);
             }
@@ -163,7 +225,7 @@ public class SubmissionService {
 
             Files.copy(file.getInputStream(), filePath);
 
-            return submissionId + "/student/" + originalFilename;
+            return submissionId + "/" + subdir + "/" + originalFilename;
         }
         return null;
     }

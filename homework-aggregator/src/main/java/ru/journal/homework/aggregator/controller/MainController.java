@@ -23,7 +23,6 @@ import ru.journal.homework.aggregator.domain.dto.TaskSubmissionDto;
 import ru.journal.homework.aggregator.service.StudentService;
 import ru.journal.homework.aggregator.service.TeacherService;
 import ru.journal.homework.aggregator.service.SubmissionService;
-import ru.journal.homework.aggregator.repo.TaskRepo;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -45,9 +44,6 @@ public class MainController {
 
     @Autowired
     private SubmissionService submissionService;
-
-    @Autowired
-    private TaskRepo taskRepo;
 
     @Value("${upload.path}")
     private String uploadPath;
@@ -367,11 +363,16 @@ public class MainController {
                         .filter(g -> g.getId().equals(selectedGroup))
                         .findFirst()
                         .orElse(null);
+
                 if (group != null) {
                     model.addAttribute("selectedGroup", group);
                     
-                    // Получаем список дисциплин, которые преподаватель ведет у этой группы
-                    List<Discipline> groupDisciplines = teacherService.getTeacherGroupDisciplines(teacher.getId(), selectedGroup);
+                    // Получаем список студентов группы независимо от выбора дисциплины
+                    List<Student> students = teacherService.getGroupStudents(group);
+                    model.addAttribute("students", students);
+
+                    // Получаем дисциплины для группы
+                    List<Discipline> groupDisciplines = teacherService.getTeacherGroupDisciplines(teacher.getId(), group.getId());
                     model.addAttribute("groupDisciplines", groupDisciplines);
                     
                     // Если выбрана дисциплина, получаем список заданий
@@ -380,18 +381,38 @@ public class MainController {
                                 .filter(d -> d.getId().equals(selectedDiscipline))
                                 .findFirst()
                                 .orElse(null);
+
                         if (discipline != null) {
                             model.addAttribute("selectedDiscipline", discipline);
                             
                             // Получаем все задания для выбранной дисциплины и группы
-                            List<LessonMessage> tasks = teacherService.getGroupDisciplineTasks(selectedGroup, selectedDiscipline);
+                            List<LessonMessage> tasks = teacherService.getGroupDisciplineTasks(group, discipline);
+                            
+                            // Для каждого студента получаем его оценки
+                            Map<String, Map<String, Integer>> studentGrades = new HashMap<>(); 
+                            
+                            for (Student student : students) {
+                                Map<String, Integer> grades = new HashMap<>();
+                                
+                                for (LessonMessage task : tasks) {
+
+                                    Task taskEntity = teacherService.getTaskByLessonMessage(task.getId());
+                                    if (taskEntity != null) {
+                                        // Получаем оценку из электронного журнала
+                                        ElectronicJournal journal = teacherService.getElectronicJournalByStudentIdAndTaskId(student.getId(), taskEntity.getId());
+                                        if (journal != null) {
+                                            grades.put(task.getId().toString(), journal.getMark());
+                                        }
+                                    }
+                                }
+                                
+                                studentGrades.put(student.getId().toString(), grades);
+                            }
+                            
                             model.addAttribute("tasks", tasks);
+                            model.addAttribute("studentGrades", studentGrades);
                         }
                     }
-                    
-                    // Получаем список студентов группы
-                    List<Student> students = teacherService.getGroupStudents(selectedGroup);
-                    model.addAttribute("students", students);
                 }
             }
         } else {
@@ -405,16 +426,17 @@ public class MainController {
     public String showSubmitPage(@AuthenticationPrincipal User user,
                                @PathVariable Long messageId, 
                                @RequestParam(required = false) String returnUrl,
+                               @RequestParam(required = false) Long studentId,
                                Model model,
                                RedirectAttributes redirectAttributes) {
         
-        Task task = taskRepo.findByLessonMessageId(messageId);
+        Task task = teacherService.getTaskByLessonMessage(messageId);
         if (task == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Задание не найдено");
             return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
         }
 
-        TaskSubmissionDto data = submissionService.getTaskSubmissionData(task.getId(), user);
+        TaskSubmissionDto data = submissionService.getTaskSubmissionData(task.getId(), user, studentId);
         
         if (data.hasError()) {
             redirectAttributes.addFlashAttribute("errorMessage", data.getError());
@@ -425,6 +447,10 @@ public class MainController {
         model.addAttribute("submission", data.getSubmission());
         model.addAttribute("messages", data.getMessages());
         model.addAttribute("returnUrl", returnUrl);
+        model.addAttribute("isTeacher", data.isTeacher());
+        model.addAttribute("student", data.getStudent());
+        model.addAttribute("journal", data.getJournal());
+        model.addAttribute("studentId", studentId);
         
         // Добавляем сообщения из flash-атрибутов
         if (model.getAttribute("errorMessage") == null && redirectAttributes.getFlashAttributes().containsKey("errorMessage")) {
@@ -446,15 +472,17 @@ public class MainController {
             @RequestParam(required = false) MultipartFile[] files,
             @RequestParam String action,
             @RequestParam(required = false) String returnUrl,
+            @RequestParam(required = false) Long studentId,
+            @RequestParam(required = false) Integer mark,
             RedirectAttributes redirectAttributes
     ) {
-        Task task = taskRepo.findByLessonMessageId(messageId);
+        Task task = teacherService.getTaskByLessonMessage(messageId);
         if (task == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Задание не найдено");
             return returnUrl != null ? "redirect:" + returnUrl : "redirect:/studentTasks";
         }
 
-        TaskSubmissionDto data = submissionService.getTaskSubmissionData(task.getId(), user);
+        TaskSubmissionDto data = submissionService.getTaskSubmissionData(task.getId(), user, studentId);
         
         if (data.hasError()) {
             redirectAttributes.addFlashAttribute("errorMessage", data.getError());
@@ -462,19 +490,35 @@ public class MainController {
         }
 
         try {
-            if ("submit".equals(action)) {
-                // Отправка на проверку
-                submissionService.submitForReview(data.getTask(), data.getStudent(), messageText, files);
-                redirectAttributes.addFlashAttribute("successMessage", "Задание отправлено на проверку");
+            if (data.isTeacher()) {
+                if ("grade".equals(action)) {
+                    if (mark == null || mark < 2 || mark > 5) {
+                        redirectAttributes.addFlashAttribute("errorMessage", "Некорректная оценка");
+                        return "redirect:/submit/" + messageId + (returnUrl != null ? "?returnUrl=" + returnUrl : "") + (studentId != null ? "&studentId=" + studentId : "");
+                    }
+                    // Выставление оценки
+                    submissionService.gradeSubmission(data.getTask(), data.getStudent(), messageText, files, user, mark);
+                    redirectAttributes.addFlashAttribute("successMessage", "Оценка выставлена");
+                } else {
+                    // Сохранение комментария преподавателя
+                    submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files, user, true);
+                    redirectAttributes.addFlashAttribute("successMessage", "Комментарий сохранен");
+                }
             } else {
-                // Сохранение сообщения
-                submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files);
-                redirectAttributes.addFlashAttribute("successMessage", "Сообщение сохранено");
+                if ("submit".equals(action)) {
+                    // Отправка на проверку
+                    submissionService.submitForReview(data.getTask(), data.getStudent(), messageText, files, user);
+                    redirectAttributes.addFlashAttribute("successMessage", "Задание отправлено на проверку");
+                } else {
+                    // Сохранение сообщения студента
+                    submissionService.saveMessage(data.getTask(), data.getStudent(), messageText, files, user, false);
+                    redirectAttributes.addFlashAttribute("successMessage", "Сообщение сохранено");
+                }
             }
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Произошла ошибка: " + e.getMessage());
         }
 
-        return "redirect:/submit/" + messageId + (returnUrl != null ? "?returnUrl=" + returnUrl : "");
+        return "redirect:/submit/" + messageId + (returnUrl != null ? "?returnUrl=" + returnUrl : "") + (studentId != null ? "&studentId=" + studentId : "");
     }
 }

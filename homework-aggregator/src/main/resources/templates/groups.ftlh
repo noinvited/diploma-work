@@ -107,7 +107,16 @@
                                         <#if selectedDiscipline??>
                                             <#if tasks?? && tasks?has_content>
                                                 <#list tasks as task>
-                                                    <td class="text-center"></td>
+                                                    <td class="text-center">
+                                                        <#if studentGrades[student.id?string]?? && studentGrades[student.id?string][task.id?string]??>
+                                                            <span class="badge bg-success fs-6">${studentGrades[student.id?string][task.id?string]}</span>
+                                                        <#else>
+                                                            <a href="/submit/${task.id}?studentId=${student.id}&returnUrl=${'/groups?selectedGroup=' + selectedGroup.id + '&selectedDiscipline=' + selectedDiscipline.id}" 
+                                                               class="btn btn-sm <#if task.statusTask?? && task.statusTask.id == 3>btn-outline-success<#else>btn-outline-danger</#if>">
+                                                                <i class="bi bi-check2"></i> Проверить
+                                                            </a>
+                                                        </#if>
+                                                    </td>
                                                 </#list>
                                             <#else>
                                                 <td class="text-center">Нет заданий</td>
@@ -174,7 +183,7 @@
                                 document.getElementById('viewModalDiscipline').textContent = discipline;
                                 document.getElementById('viewModalDate').textContent = date;
                                 document.getElementById('viewModalPairNumber').textContent = pair;
-                                document.getElementById('modalTaskText').textContent = taskText || 'Текст задания отсутствует';
+                                document.getElementById('modalTaskText').textContent = taskText;
 
                                 // Обработка срока выполнения
                                 const deadlineBadge = document.getElementById('deadlineBadge');

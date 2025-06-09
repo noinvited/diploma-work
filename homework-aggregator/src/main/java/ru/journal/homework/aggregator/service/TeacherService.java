@@ -269,7 +269,7 @@ public class TeacherService {
         lessonMessageRepo.save(message);
 
         if(needToPerform){
-            Task task = taskRepo.findByLessonMessageId(messageId);
+            Task task = getTaskByLessonMessage(messageId);
             if (task == null) {
                 task = new Task();
                 task.setLessonMessage(message);
@@ -327,7 +327,7 @@ public class TeacherService {
         }
 
         // Удаляем связанное задание, если оно есть
-        Task task = taskRepo.findByLessonMessageId(messageId);
+        Task task = getTaskByLessonMessage(messageId);
         if (task != null) {
             taskRepo.delete(task);
         }
@@ -358,41 +358,20 @@ public class TeacherService {
         return teacherGroupRepo.findAllGroupsByTeacherId(teacherId);
     }
 
-    public List<Student> getGroupStudents(Long groupId) {
-        return studentRepo.findByGroupId(groupId);
-    }
-
-    public Student getStudent(Long studentId) {
-        return studentRepo.findById(studentId).orElse(null);
-    }
-
-    public boolean hasAccessToGroup(Long teacherId, Long groupId) {
-        return teacherGroupRepo.existsByTeacherIdAndGroupId(teacherId, groupId);
-    }
-
-    public List<Discipline> getGroupDisciplines(Long groupId) {
-        List<GroupDiscipline> groupDisciplines = groupDisciplineRepo.findByGroupId(groupId);
-        return groupDisciplines.stream()
-                .map(GroupDiscipline::getDiscipline)
-                .collect(Collectors.toList());
-    }
-
-    public Map<Long, List<ElectronicJournal>> getStudentMarks(Long studentId) {
-        // Получаем все записи из электронного журнала для студента
-        List<ElectronicJournal> journalEntries = electronicJournalRepo.findByStudentId(studentId);
-        
-        // Группируем оценки по дисциплинам
-        return journalEntries.stream()
-                .filter(entry -> entry.getTask() != null 
-                        && entry.getTask().getLessonMessage() != null 
-                        && entry.getTask().getLessonMessage().getLessons() != null)
-                .collect(Collectors.groupingBy(
-                        entry -> entry.getTask().getLessonMessage().getLessons().getDiscipline().getId()
-                ));
+    public List<Student> getGroupStudents(Group group) {
+        return studentRepo.findByGroupId(group.getId());
     }
 
     public List<StatusTask> getAllStatusTasks() {
         return statusTaskRepo.findAll();
+    }
+
+    public Task getTaskByLessonMessage(Long lessonMessageId){
+        return taskRepo.findByLessonMessage(lessonMessageRepo.findById(lessonMessageId).get());
+    }
+
+    public ElectronicJournal getElectronicJournalByStudentIdAndTaskId(Long studentId, Long taskId){
+        return electronicJournalRepo.findByStudentIdAndTaskId(studentId, taskId).get();
     }
 
     public List<LessonMessage> getFilteredMessages(
@@ -459,9 +438,9 @@ public class TeacherService {
                 .collect(Collectors.toList());
     }
 
-    public List<LessonMessage> getGroupDisciplineTasks(Long groupId, Long disciplineId) {
+    public List<LessonMessage> getGroupDisciplineTasks(Group group, Discipline discipline) {
         // Получаем все занятия для группы по дисциплине
-        List<Lesson> lessons = lessonRepo.findByGroupIdAndDisciplineId(groupId, disciplineId);
+        List<Lesson> lessons = lessonRepo.findByGroupIdAndDisciplineId(group.getId(), discipline.getId());
         
         // Получаем все сообщения для этих занятий и сортируем по дате
         return lessons.stream()

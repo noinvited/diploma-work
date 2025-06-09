@@ -2,10 +2,7 @@ package ru.journal.homework.aggregator.domain.dto;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import ru.journal.homework.aggregator.domain.Student;
-import ru.journal.homework.aggregator.domain.Submission;
-import ru.journal.homework.aggregator.domain.SubmissionMessage;
-import ru.journal.homework.aggregator.domain.Task;
+import ru.journal.homework.aggregator.domain.*;
 
 import java.util.List;
 
@@ -17,6 +14,8 @@ public class TaskSubmissionDto {
     private Submission submission;
     private List<SubmissionMessage> messages;
     private String error;
+    private boolean isTeacher;
+    private ElectronicJournal journal;
 
     public boolean hasError() { return error != null && !error.isEmpty();}
 }
