@@ -105,9 +105,9 @@
                                                 Дедлайн: ${message.formattedDeadline!'Не указан'}
                                             </span>
                                         </#if>
-                                        <#if message.statusTask??>
+                                        <#if submissions[message.id?string]?? && submissions[message.id?string].statusTask??>
                                             <span class="badge bg-secondary">
-                                                ${message.statusTask.status}
+                                                ${submissions[message.id?string].statusTask.status}
                                             </span>
                                         </#if>
                                     <#else>

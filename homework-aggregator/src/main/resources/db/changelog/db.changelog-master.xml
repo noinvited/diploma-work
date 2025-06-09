@@ -19,4 +19,8 @@
         <comment>изменение системы сообщений на систему сдачи заданий</comment>
         <sqlFile path="../../sql/submission_system.sql" endDelimiter=";" relativeToChangelogFile="true"/>
     </changeSet>
+    <changeSet id="remove_submission_files" author="mnrodionov">
+        <comment>удаление столбца files из таблицы submission</comment>
+        <sqlFile path="../../sql/remove_submission_files_column.sql" endDelimiter=";" relativeToChangelogFile="true"/>
+    </changeSet>
 </databaseChangeLog>

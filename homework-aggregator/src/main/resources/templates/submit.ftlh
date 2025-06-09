@@ -126,7 +126,7 @@
                     <form action="/submit/${task.lessonMessage.id}${returnUrl???then('?returnUrl=' + returnUrl, '')}" method="post" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="messageText" class="form-label">Сообщение</label>
-                            <textarea class="form-control" id="messageText" name="messageText" rows="3" required></textarea>
+                            <textarea class="form-control" id="messageText" name="messageText" rows="3"></textarea>
                         </div>
                         <div class="mb-3">
                             <label for="files" class="form-label">Прикрепить файлы</label>
@@ -175,19 +175,6 @@
     <div class="mb-5"></div>
 
     <script>
-        function toggleMarkInput() {
-            const needsRevision = document.getElementById('needsRevision').checked;
-            const markInputGroup = document.getElementById('markInputGroup');
-            const mark = document.getElementById('mark');
-            
-            if (needsRevision) {
-                markInputGroup.style.display = 'none';
-                mark.value = '';
-            } else {
-                markInputGroup.style.display = 'block';
-            }
-        }
-
         function validateStudentSubmission() {
             const messageText = document.getElementById('messageText').value.trim();
             const files = document.getElementById('files').files;
@@ -204,8 +191,12 @@
             const files = document.getElementById('files').files;
             const needsRevision = document.getElementById('needsRevision').checked;
             
-            if (messageText === '' && files.length === 0) {
+            if (!needsRevision && messageText === '' && files.length === 0) {
                 alert('Необходимо заполнить текст комментария или прикрепить файл');
+                return false;
+            }
+            if (needsRevision && messageText === '') {
+                alert('При отправке на доработку необходимо указать комментарий');
                 return false;
             }
             return true;
@@ -219,12 +210,24 @@
             }
             
             const mark = document.getElementById('mark').value;
-            
             if (!mark) {
                 alert('Необходимо выставить оценку');
                 return false;
             }
             return true;
+        }
+
+        function toggleMarkInput() {
+            const needsRevision = document.getElementById('needsRevision').checked;
+            const markInputGroup = document.getElementById('markInputGroup');
+            const mark = document.getElementById('mark');
+            
+            if (needsRevision) {
+                markInputGroup.style.display = 'none';
+                mark.value = '';
+            } else {
+                markInputGroup.style.display = 'block';
+            }
         }
     </script>
 </@c.page>

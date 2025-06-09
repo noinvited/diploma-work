@@ -106,11 +106,6 @@
                                                 Дедлайн: ${message.formattedDeadline!'Не указан'}
                                             </span>
                                         </#if>
-                                        <#if message.statusTask??>
-                                            <span class="badge bg-secondary">
-                                                ${message.statusTask.status}
-                                            </span>
-                                        </#if>
                                     <#else>
                                         <span class="badge bg-secondary">Информационное сообщение</span>
                                     </#if>

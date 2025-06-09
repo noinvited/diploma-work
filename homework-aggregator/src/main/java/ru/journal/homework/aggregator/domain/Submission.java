@@ -2,7 +2,6 @@ package ru.journal.homework.aggregator.domain;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
@@ -45,9 +44,4 @@ public class Submission {
     @NotNull
     @Column(name = "last_update_date", nullable = false)
     private Instant lastUpdateDate;
-
-    @Size(max = 2048)
-    @Column(name = "files", length = 2048)
-    private String files;
-
 }

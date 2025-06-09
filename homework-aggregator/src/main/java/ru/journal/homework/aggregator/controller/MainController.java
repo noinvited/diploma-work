@@ -316,6 +316,9 @@ public class MainController {
                     statusId
             );
             model.addAttribute("messages", messages);
+
+            Map<String, Submission> submissions = studentService.getSubmissionsForMessages(messages, user);
+            model.addAttribute("submissions", submissions);
         } else {
             return "redirect:/teacherTasks";
         }
@@ -392,20 +395,33 @@ public class MainController {
                             List<LessonMessage> tasks = teacherService.getGroupDisciplineTasks(group, discipline);
                             
                             // Для каждого студента получаем его оценки
-                            Map<String, Map<String, Integer>> studentGrades = new HashMap<>(); 
+                            Map<String, Map<String, Integer>> studentGrades = new HashMap<>();
+                            Map<String, Submission> submissions = new HashMap<>();
+                            Map<Long, Task> taskEntities = new HashMap<>(); // Map для хранения Task по LessonMessage.id
+                            
+                            // Сначала получаем все Task для LessonMessage
+                            for (LessonMessage task : tasks) {
+                                Task taskEntity = teacherService.getTaskByLessonMessage(task.getId());
+                                if (taskEntity != null) {
+                                    taskEntities.put(task.getId(), taskEntity);
+                                }
+                            }
                             
                             for (Student student : students) {
                                 Map<String, Integer> grades = new HashMap<>();
                                 
                                 for (LessonMessage task : tasks) {
-
-                                    Task taskEntity = teacherService.getTaskByLessonMessage(task.getId());
+                                    Task taskEntity = taskEntities.get(task.getId());
                                     if (taskEntity != null) {
                                         // Получаем оценку из электронного журнала
                                         ElectronicJournal journal = teacherService.getElectronicJournalByStudentIdAndTaskId(student.getId(), taskEntity.getId());
                                         if (journal != null) {
                                             grades.put(task.getId().toString(), journal.getMark());
                                         }
+                                        
+                                        // Получаем submission для студента и задания
+                                        Submission submission = submissionService.getOrCreateSubmission(taskEntity, student);
+                                        submissions.put(student.getId().toString() + "_" + task.getId().toString(), submission);
                                     }
                                 }
                                 
@@ -414,6 +430,7 @@ public class MainController {
                             
                             model.addAttribute("tasks", tasks);
                             model.addAttribute("studentGrades", studentGrades);
+                            model.addAttribute("submissions", submissions);
                         }
                     }
                 }

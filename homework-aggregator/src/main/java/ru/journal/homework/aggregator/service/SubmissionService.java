@@ -89,7 +89,6 @@ public class SubmissionService {
 
         Submission submission = getOrCreateSubmission(task, student);
         List<SubmissionMessage> messages = getSubmissionMessages(submission);
-        messages.stream().forEach(msg -> msg.setCreatedAt(msg.getCreatedAt().plusSeconds(60*60*3)));
 
         ElectronicJournal journal = electronicJournalRepo.findByStudentIdAndTaskId(student.getId(), task.getId()).orElse(null);
 
@@ -109,7 +108,12 @@ public class SubmissionService {
                     Submission submission = new Submission();
                     submission.setTask(task);
                     submission.setStudent(student);
-                    submission.setSubmissionDate(Instant.now());
+                    submission.setSubmissionDate(Instant.now().plusSeconds(60*60*3));
+                    submission.setLastUpdateDate(Instant.now().plusSeconds(60*60*3));
+                    
+                    // Устанавливаем начальный статус
+                    StatusTask initialStatus = statusTaskRepo.findFirstByOrderById();
+                    submission.setStatusTask(initialStatus);
                     
                     return submissionRepo.save(submission);
                 });
@@ -120,7 +124,6 @@ public class SubmissionService {
         return submissionMessageRepo.findBySubmissionOrderByCreatedAtAsc(submission);
     }
 
-    //Сохраняет новое сообщение без изменения статуса
     public void saveMessage(Task task, Student student, String messageText, MultipartFile[] files, User author, boolean isTeacherMessage, boolean needsRevision) throws IOException {
         Submission submission = getOrCreateSubmission(task, student);
         
@@ -144,23 +147,21 @@ public class SubmissionService {
         message.setFiles(filesString);
         message.setAuthor(author);
         message.setIsTeacherMessage(isTeacherMessage);
-        message.setCreatedAt(Instant.now());
+        // Сохраняем время в UTC+3 (московское время)
+        message.setCreatedAt(Instant.now().plusSeconds(60*60*3));
         
         submissionMessageRepo.save(message);
 
         // Если требуются доработки, меняем статус
         if (needsRevision) {
-            Optional<StatusTask> statusTask = statusTaskRepo.findByStatus("Требуются доработки");
+            Optional<StatusTask> statusTask = statusTaskRepo.findById(4L);
             if (statusTask.isPresent()) {
-                LessonMessage lessonMessage = task.getLessonMessage();
-                lessonMessage.setStatusTask(statusTask.get());
-                lessonMessageRepo.save(lessonMessage);
                 submission.setStatusTask(statusTask.get());
             }
         }
 
         // Обновляем дату последнего обновления сдачи
-        submission.setLastUpdateDate(Instant.now());
+        submission.setLastUpdateDate(Instant.now().plusSeconds(60*60*3));
         submissionRepo.save(submission);
     }
 
@@ -173,14 +174,10 @@ public class SubmissionService {
         Submission submission = getOrCreateSubmission(task, student);
         
         // Меняем статус на "На проверке"
-        Optional<StatusTask> statusTask = statusTaskRepo.findByStatus("На проверке");
+        Optional<StatusTask> statusTask = statusTaskRepo.findById(3L);
         if (statusTask.isPresent()) {
-            LessonMessage lessonMessage = task.getLessonMessage();
-            lessonMessage.setStatusTask(statusTask.get());
-            lessonMessageRepo.save(lessonMessage);
             submission.setStatusTask(statusTask.get());
-
-            submission.setLastUpdateDate(Instant.now());
+            submission.setLastUpdateDate(Instant.now().plusSeconds(60*60*3));
             
             submissionRepo.save(submission);
         }
@@ -205,14 +202,10 @@ public class SubmissionService {
         electronicJournalRepo.save(journal);
         
         // Меняем статус на "Проверено"
-        Optional<StatusTask> statusTask = statusTaskRepo.findByStatus("Проверено");
+        Optional<StatusTask> statusTask = statusTaskRepo.findById(5L);
         if (statusTask.isPresent()) {
-            LessonMessage lessonMessage = task.getLessonMessage();
-            lessonMessage.setStatusTask(statusTask.get());
-            lessonMessageRepo.save(lessonMessage);
             submission.setStatusTask(statusTask.get());
-
-            submission.setLastUpdateDate(Instant.now());
+            submission.setLastUpdateDate(Instant.now().plusSeconds(60*60*3));
             
             submissionRepo.save(submission);
         }

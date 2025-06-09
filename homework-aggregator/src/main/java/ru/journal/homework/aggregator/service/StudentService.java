@@ -26,6 +26,7 @@ public class StudentService {
     private final StudentRepo studentRepo;
     private final ElectronicJournalRepo electronicJournalRepo;
     private final GroupDisciplineRepo groupDisciplineRepo;
+    private final SubmissionService submissionService;
 
     public List<String> getDatesString(Integer shift){
         LocalDate today = LocalDate.now();
@@ -196,5 +197,24 @@ public class StudentService {
                 .collect(Collectors.groupingBy(
                         entry -> entry.getTask().getLessonMessage().getLessons().getDiscipline().getId()
                 ));
+    }
+
+    public Map<String, Submission> getSubmissionsForMessages(List<LessonMessage> messages, User user) {
+        Map<String, Submission> submissions = new HashMap<>();
+        Student student = studentRepo.findStudentByUserId(user.getId());
+        
+        if (student != null) {
+            for (LessonMessage message : messages) {
+                if (message.getNeedToPerform()) {
+                    Task task = submissionService.getTaskByLessonMessage(message.getId());
+                    if (task != null) {
+                        Submission submission = submissionService.getOrCreateSubmission(task, student);
+                        submissions.put(message.getId().toString(), submission);
+                    }
+                }
+            }
+        }
+        
+        return submissions;
     }
 }
