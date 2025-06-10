@@ -122,46 +122,46 @@ public class StudentService {
         return messagesMap;
     }
 
-    public List<LessonMessage> getFilteredMessages(
-            Long groupId,
-            Long disciplineId,
-            Boolean needToPerform,
-            Long statusId
-    ) {
+    public List<LessonMessage> getFilteredMessages(Long groupId, Long disciplineId, Boolean needToPerform, Long statusId, User user) {
         List<Lesson> lessons = lessonRepo.findByGroupId(groupId);
+        List<LessonMessage> messages = new ArrayList<>();
         
-        // Получаем все сообщения для занятий
-        List<LessonMessage> allMessages = new ArrayList<>();
         for (Lesson lesson : lessons) {
             if (disciplineId == null || lesson.getDiscipline().getId().equals(disciplineId)) {
-                List<LessonMessage> messages = lessonMessageRepo.findByLessonsId(lesson.getId());
-                allMessages.addAll(messages);
+                messages.addAll(lessonMessageRepo.findByLessonsId(lesson.getId()));
             }
         }
-
-        // Фильтруем по обязательности
+        
         if (needToPerform != null) {
-            allMessages = allMessages.stream()
-                    .filter(msg -> msg.getNeedToPerform() == needToPerform)
+            messages = messages.stream()
+                    .filter(m -> m.getNeedToPerform().equals(needToPerform))
                     .collect(Collectors.toList());
         }
 
-        // Фильтруем по статусу
         if (statusId != null) {
-            allMessages = allMessages.stream()
+            messages = messages.stream()
                     .filter(msg -> {
-                        if (msg.getStatusTask() == null) {
+                        if (!msg.getNeedToPerform()) {
+                            return false; // Пропускаем информационные сообщения
+                        }
+                        Task task = submissionService.getTaskByLessonMessage(msg.getId());
+                        if (task == null) {
                             return false;
                         }
-                        return msg.getStatusTask().getId().equals(statusId);
+                        Student student = studentRepo.findStudentByUserId(user.getId());
+                        if (student == null) {
+                            return false;
+                        }
+                        Submission submission = submissionService.getOrCreateSubmission(task, student);
+                        return submission.getStatusTask() != null && submission.getStatusTask().getId().equals(statusId);
                     })
                     .collect(Collectors.toList());
         }
-
-        // Сортируем по дате занятия
-        allMessages.sort((m1, m2) -> m2.getLessons().getDate().compareTo(m1.getLessons().getDate()));
-
-        return allMessages;
+        
+        // Сортируем по дате занятия в обратном порядке
+        messages.sort((m1, m2) -> m2.getLessons().getDate().compareTo(m1.getLessons().getDate()));
+        
+        return messages;
     }
 
     public List<Discipline> getGroupDisciplines(Long groupId) {
@@ -175,7 +175,7 @@ public class StudentService {
         return disciplineRepo.findAll();
     }
 
-    public List<StatusTask> getAllStatusTasks(){
+    public List<StatusTask> getAllStatusTasks() {
         return statusTaskRepo.findAll();
     }
 

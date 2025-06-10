@@ -66,9 +66,9 @@
                         <div class="mt-3 pt-3 border-top">
                             <strong>Статус:</strong>
                             <span class="badge bg-secondary ms-2">${submission.statusTask.status}</span>
-                            <#if isTeacher && journal??>
+                            <#if journal?? && submission.statusTask.id == 5>
                                 <strong class="ms-3">Оценка:</strong>
-                                <span class="badge bg-success ms-2">${journal.mark}</span>
+                                <span class="badge ${(journal.mark?string == "2")?then('bg-danger', (journal.mark?string == "3")?then('bg-warning', 'bg-success'))} ms-2">${journal.mark}</span>
                             </#if>
                         </div>
                     </#if>
@@ -123,7 +123,7 @@
                     <h5 class="card-title mb-0"><#if isTeacher>Проверка задания<#else>Отправка решения</#if></h5>
                 </div>
                 <div class="card-body">
-                    <form action="/submit/${task.lessonMessage.id}${returnUrl???then('?returnUrl=' + returnUrl, '')}" method="post" enctype="multipart/form-data">
+                    <form action="/submit/${task.lessonMessage.id}${returnUrl???then('?returnUrl=' + returnUrl?url, '')}" method="post" enctype="multipart/form-data">
                         <div class="mb-3">
                             <label for="messageText" class="form-label">Сообщение</label>
                             <textarea class="form-control" id="messageText" name="messageText" rows="3"></textarea>
@@ -144,8 +144,8 @@
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between">
-                                <button type="submit" name="action" value="comment" class="btn btn-primary" onclick="return validateTeacherComment()">
-                                    <i class="bi bi-send"></i> Отправить комментарий
+                                <button type="submit" name="action" value="comment" class="btn btn-primary" onclick="return validateTeacherMessage()">
+                                    <i class="bi bi-send"></i> Отправить сообщение
                                 </button>
                                 <button type="submit" name="action" value="grade" class="btn btn-success" onclick="return validateTeacherGrade()">
                                     <i class="bi bi-check2-circle"></i> Выставить оценку
@@ -156,13 +156,15 @@
                                 <button type="submit" name="action" value="save" class="btn btn-primary" onclick="return validateStudentSubmission()">
                                     <i class="bi bi-send"></i> Отправить сообщение
                                 </button>
-                                <button type="submit" name="action" value="submit" class="btn btn-success" onclick="return validateStudentSubmission()">
-                                    <i class="bi bi-check2-circle"></i> Отправить на проверку
-                                </button>
+                                <#if !(submission?? && submission.statusTask.id == 5 && journal??)>
+                                    <button type="submit" name="action" value="submit" class="btn btn-success" onclick="return validateStudentSubmission()">
+                                        <i class="bi bi-check2-circle"></i> Отправить на проверку
+                                    </button>
+                                </#if>
                             </div>
                         </#if>
                         <#if returnUrl??>
-                            <input type="hidden" name="returnUrl" value="${returnUrl}">
+                            <input type="hidden" name="returnUrl" value="${returnUrl?url}">
                         </#if>
                         <#if studentId??>
                             <input type="hidden" name="studentId" value="${studentId}">
@@ -186,13 +188,19 @@
             return true;
         }
 
-        function validateTeacherComment() {
+        function validateTeacherMessage() {
             const messageText = document.getElementById('messageText').value.trim();
             const files = document.getElementById('files').files;
             const needsRevision = document.getElementById('needsRevision').checked;
+            const mark = document.getElementById('mark').value;
+            
+            if (mark) {
+                alert('При отправке сообщения нельзя выставлять оценку');
+                return false;
+            }
             
             if (!needsRevision && messageText === '' && files.length === 0) {
-                alert('Необходимо заполнить текст комментария или прикрепить файл');
+                alert('Необходимо заполнить текст сообщения или прикрепить файл');
                 return false;
             }
             if (needsRevision && messageText === '') {

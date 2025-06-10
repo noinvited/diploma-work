@@ -14,7 +14,7 @@
         </div>
         <div class="card-body">
             <form method="get" action="/teacherTasks" class="row g-3">
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="disciplineId" class="form-label">Предмет</label>
                     <select class="form-select" id="disciplineId" name="disciplineId">
                         <option value="">Все предметы</option>
@@ -25,7 +25,7 @@
                         </#list>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="groupId" class="form-label">Группа</label>
                     <select class="form-select" id="groupId" name="groupId">
                         <option value="">Все группы</option>
@@ -36,7 +36,7 @@
                         </#list>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label for="needToPerform" class="form-label">Тип сообщения</label>
                     <select class="form-select" id="needToPerform" name="needToPerform">
                         <option value="">Все сообщения</option>
@@ -46,17 +46,6 @@
                         <option value="false" <#if selectedNeedToPerform?? && !selectedNeedToPerform>selected</#if>>
                             Информационные сообщения
                         </option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label for="status" class="form-label">Статус задания</label>
-                    <select class="form-select" id="status" name="statusId">
-                        <option value="">Любой статус</option>
-                        <#list statuses as status>
-                            <option value="${status.id}" <#if selectedStatus?? && selectedStatus == status.id>selected</#if>>
-                                ${status.status}
-                            </option>
-                        </#list>
                     </select>
                 </div>
                 <div class="col-12">

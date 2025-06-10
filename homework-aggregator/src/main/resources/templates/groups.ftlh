@@ -110,14 +110,17 @@
                                                     <td class="text-center">
                                                         <#assign submission = submissions[student.id?string + '_' + task.id?string]!>
                                                         <#if studentGrades[student.id?string]?? && studentGrades[student.id?string][task.id?string]??>
-                                                            <span class="badge bg-success fs-6">${studentGrades[student.id?string][task.id?string]}</span>
+                                                            <a href="/submit/${task.id}?studentId=${student.id}&returnUrl=${('/groups?selectedGroup=' + selectedGroup.id + '&selectedDiscipline=' + selectedDiscipline.id)?url}" 
+                                                               class="text-decoration-none">
+                                                                <span class="badge ${(studentGrades[student.id?string][task.id?string]?string == "2")?then('bg-danger', (studentGrades[student.id?string][task.id?string]?string == "3")?then('bg-warning', 'bg-success'))} fs-6">${studentGrades[student.id?string][task.id?string]}</span>
+                                                            </a>
                                                         <#elseif submission.statusTask?? && submission.statusTask.id == 3>
-                                                            <a href="/submit/${task.id}?studentId=${student.id}&returnUrl=${'/groups?selectedGroup=' + selectedGroup.id + '&selectedDiscipline=' + selectedDiscipline.id}" 
+                                                            <a href="/submit/${task.id}?studentId=${student.id}&returnUrl=${('/groups?selectedGroup=' + selectedGroup.id + '&selectedDiscipline=' + selectedDiscipline.id)?url}" 
                                                                class="btn btn-sm btn-outline-success">
                                                                 <i class="bi bi-check2"></i> Проверить
                                                             </a>
                                                         <#else>
-                                                            <a href="/submit/${task.id}?studentId=${student.id}&returnUrl=${'/groups?selectedGroup=' + selectedGroup.id + '&selectedDiscipline=' + selectedDiscipline.id}" 
+                                                            <a href="/submit/${task.id}?studentId=${student.id}&returnUrl=${('/groups?selectedGroup=' + selectedGroup.id + '&selectedDiscipline=' + selectedDiscipline.id)?url}" 
                                                                class="btn btn-sm btn-outline-danger">
                                                                 <i class="bi bi-check2"></i> Проверить
                                                             </a>

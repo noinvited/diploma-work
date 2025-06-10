@@ -105,9 +105,15 @@
                                                 Дедлайн: ${message.formattedDeadline!'Не указан'}
                                             </span>
                                         </#if>
-                                        <#if submissions[message.id?string]?? && submissions[message.id?string].statusTask??>
+                                        <#assign status = submissions[message.id?string].statusTask>
+                                        <#if status.id == 5 && tasks[message.id?string]?? && studentGrades[tasks[message.id?string].id?string]??>
+                                            <span class="badge ${(studentGrades[tasks[message.id?string].id?string]?string == "2")?then('bg-danger', 
+                                                (studentGrades[tasks[message.id?string].id?string]?string == "3")?then('bg-warning', 'bg-success'))}">
+                                                ${status.status}: ${studentGrades[tasks[message.id?string].id?string]}
+                                            </span>
+                                        <#else>
                                             <span class="badge bg-secondary">
-                                                ${submissions[message.id?string].statusTask.status}
+                                                ${status.status}
                                             </span>
                                         </#if>
                                     <#else>

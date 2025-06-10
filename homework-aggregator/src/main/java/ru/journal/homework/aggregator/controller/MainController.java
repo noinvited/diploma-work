@@ -301,24 +301,42 @@ public class MainController {
     ) {
         Group studentGroup = studentService.getStudentGroup(user);
         if (studentGroup != null) {
-            List<Discipline> disciplines = studentService.getAllDisciplines();
-            List<StatusTask> statusTasks = studentService.getAllStatusTasks();
+            // Получаем дисциплины группы студента
+            List<Discipline> disciplines = studentService.getGroupDisciplines(studentGroup.getId());
             model.addAttribute("disciplines", disciplines);
-            model.addAttribute("statuses", statusTasks);
             model.addAttribute("selectedDiscipline", disciplineId);
-            model.addAttribute("selectedNeedToPerform", needToPerform);
+
+            // Получаем все статусы заданий
+            List<StatusTask> statuses = studentService.getAllStatusTasks();
+            model.addAttribute("statuses", statuses);
             model.addAttribute("selectedStatus", statusId);
+            model.addAttribute("selectedNeedToPerform", needToPerform);
 
-            List<LessonMessage> messages = studentService.getFilteredMessages(
-                    studentGroup.getId(),
-                    disciplineId,
-                    needToPerform,
-                    statusId
-            );
+            // Получаем сообщения с заданиями
+            List<LessonMessage> messages = studentService.getFilteredMessages(studentGroup.getId(), disciplineId, needToPerform, statusId, user);
             model.addAttribute("messages", messages);
+            model.addAttribute("needToPerform", needToPerform);
 
-            Map<String, Submission> submissions = studentService.getSubmissionsForMessages(messages, user);
+            // Получаем статусы заданий
+            Map<String, Submission> submissions = submissionService.getSubmissionsForMessages(messages, user);
             model.addAttribute("submissions", submissions);
+
+            // Добавляем задания и оценки
+            Map<String, Task> tasks = new HashMap<>();
+            Map<String, Integer> studentGrades = new HashMap<>();
+            
+            for (LessonMessage message : messages) {
+                if (message.getNeedToPerform()) {
+                    Task task = submissionService.getTaskByLessonMessage(message.getId());
+                    if (task != null) {
+                        tasks.put(message.getId().toString(), task);
+                        studentGrades.putAll(submissionService.getStudentGradesForTasks(user, task));
+                    }
+                }
+            }
+            
+            model.addAttribute("tasks", tasks);
+            model.addAttribute("studentGrades", studentGrades);
         } else {
             return "redirect:/teacherTasks";
         }

@@ -14,7 +14,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -185,8 +187,13 @@ public class SubmissionService {
 
     //Выставляет оценку за задание
     public void gradeSubmission(Task task, Student student, String messageText, MultipartFile[] files, User author, Integer mark) throws IOException {
+        // Если сообщение пустое, добавляем автоматическое сообщение об оценке
+        String finalMessageText = messageText.trim().isEmpty() ? 
+            "Оценка: " + mark : 
+            messageText.trim() + "\n(Оценка: " + mark + ")";
+            
         // Сохраняем сообщение
-        saveMessage(task, student, messageText, files, author, true, false);
+        saveMessage(task, student, finalMessageText, files, author, true, false);
         
         // Получаем сдачу задания
         Submission submission = getOrCreateSubmission(task, student);
@@ -239,7 +246,40 @@ public class SubmissionService {
         return null;
     }
 
-    public Task getTaskByLessonMessage(Long lessonMessageId){
-        return taskRepo.findByLessonMessage(lessonMessageRepo.findById(lessonMessageId).get());
+    public Task getTaskByLessonMessage(Long lessonMessageId) {
+        Optional<LessonMessage> lessonMessage = lessonMessageRepo.findById(lessonMessageId);
+        if (lessonMessage.isEmpty()) {
+            return null;
+        }
+        return taskRepo.findByLessonMessage(lessonMessage.get());
+    }
+
+    public Map<String, Integer> getStudentGradesForTasks(User user, Task task) {
+        Map<String, Integer> grades = new HashMap<>();
+        Student student = studentRepo.findStudentByUserId(user.getId());
+        if (student != null && task != null) {
+            ElectronicJournal journal = electronicJournalRepo.findByStudentIdAndTaskId(student.getId(), task.getId())
+                    .orElse(null);
+            if (journal != null) {
+                grades.put(task.getId().toString(), journal.getMark());
+            }
+        }
+        return grades;
+    }
+
+    public Map<String, Submission> getSubmissionsForMessages(List<LessonMessage> messages, User user) {
+        Map<String, Submission> submissions = new HashMap<>();
+        Student student = studentRepo.findStudentByUserId(user.getId());
+        
+        if (student != null) {
+            for (LessonMessage message : messages) {
+                Task task = getTaskByLessonMessage(message.getId());
+                if (task != null) {
+                    Submission submission = getOrCreateSubmission(task, student);
+                    submissions.put(message.getId().toString(), submission);
+                }
+            }
+        }
+        return submissions;
     }
 }
