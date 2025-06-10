@@ -359,8 +359,14 @@ public class MainController {
             model.addAttribute("disciplines", disciplines);
             
             // Получаем оценки студента по всем дисциплинам
-            Map<Long, List<ElectronicJournal>> studentMarks = studentService.getStudentMarks(user);
+            Map<String, List<ElectronicJournal>> studentMarks = studentService.getStudentMarks(user);
             model.addAttribute("studentMarks", studentMarks != null ? studentMarks : new HashMap<>());
+
+            // Получаем детальную информацию о заданиях
+            if (studentMarks != null) {
+                Map<String, Map<String, Object>> taskDetails = studentService.getTaskDetails(studentMarks);
+                model.addAttribute("taskDetails", taskDetails);
+            }
         } else {
             return "redirect:/teacherSchedule";
         }

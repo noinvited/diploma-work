@@ -179,7 +179,7 @@ public class StudentService {
         return statusTaskRepo.findAll();
     }
 
-    public Map<Long, List<ElectronicJournal>> getStudentMarks(User user) {
+    public Map<String, List<ElectronicJournal>> getStudentMarks(User user) {
         // Получаем студента
         Student student = studentRepo.findStudentByUserId(user.getId());
         if (student == null) {
@@ -189,14 +189,47 @@ public class StudentService {
         // Получаем все записи из электронного журнала для студента
         List<ElectronicJournal> journalEntries = electronicJournalRepo.findByStudentId(student.getId());
         
-        // Группируем оценки по дисциплинам
+        // Группируем оценки по дисциплинам, используя строковый ключ
         return journalEntries.stream()
                 .filter(entry -> entry.getTask() != null 
                         && entry.getTask().getLessonMessage() != null 
-                        && entry.getTask().getLessonMessage().getLessons() != null)
+                        && entry.getTask().getLessonMessage().getLessons() != null
+                        && entry.getTask().getLessonMessage().getLessons().getDiscipline() != null
+                        && entry.getMark() != null)  // Добавляем проверку на наличие оценки
                 .collect(Collectors.groupingBy(
-                        entry -> entry.getTask().getLessonMessage().getLessons().getDiscipline().getId()
+                        entry -> entry.getTask().getLessonMessage().getLessons().getDiscipline().getId().toString()
                 ));
+    }
+
+    // Добавляем новый метод для получения расширенной информации о заданиях
+    public Map<String, Map<String, Object>> getTaskDetails(Map<String, List<ElectronicJournal>> marks) {
+        Map<String, Map<String, Object>> taskDetails = new HashMap<>();
+        
+        marks.forEach((disciplineId, journalEntries) -> {
+            Map<String, Object> disciplineDetails = new HashMap<>();
+            
+            journalEntries.forEach(entry -> {
+                if (entry.getTask() != null && entry.getTask().getLessonMessage() != null) {
+                    String taskId = entry.getTask().getId().toString();
+                    Map<String, Object> taskInfo = new HashMap<>();
+                    
+                    LessonMessage lessonMessage = entry.getTask().getLessonMessage();
+                    taskInfo.put("deadline", lessonMessage.getDeadline());
+                    taskInfo.put("needToPerform", lessonMessage.getNeedToPerform());
+                    taskInfo.put("textMessage", lessonMessage.getTextMessage());
+                    
+                    if (lessonMessage.getFile() != null && !lessonMessage.getFile().isEmpty()) {
+                        taskInfo.put("files", lessonMessage.getFile());
+                    }
+                    
+                    disciplineDetails.put(taskId, taskInfo);
+                }
+            });
+            
+            taskDetails.put(disciplineId, disciplineDetails);
+        });
+        
+        return taskDetails;
     }
 
     public Map<String, Submission> getSubmissionsForMessages(List<LessonMessage> messages, User user) {
