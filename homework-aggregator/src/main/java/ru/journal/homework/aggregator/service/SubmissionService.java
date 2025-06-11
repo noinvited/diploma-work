@@ -205,6 +205,7 @@ public class SubmissionService {
         journal.setStudent(student);
         journal.setTask(task);
         journal.setMark(mark);
+        journal.setComment(messageText.trim());
         
         electronicJournalRepo.save(journal);
         

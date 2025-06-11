@@ -189,15 +189,18 @@
         }
 
         .custom-accordion .accordion-button:hover {
-            background-color: #e7f1ff !important;
+            background-color: #cde1ff !important;
         }
         
         .custom-accordion .accordion-button:not(.collapsed) {
             background-color: #e7f1ff !important;
-            color: #1e4620 !important;
-            border-bottom: 2px solid #198754 !important;
         }
 
+        /* Добавляем специальный стиль для наведения на активную кнопку */
+        .custom-accordion .accordion-button:not(.collapsed):hover {
+            background-color: #cde1ff !important;
+        }
+        
         .custom-accordion .accordion-button::after {
             content: '';
             width: 24px;
