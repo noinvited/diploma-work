@@ -77,8 +77,6 @@
                                                                            data-date="${mark.task.lessonMessage.lessons.date?datetime("yyyy-MM-dd")?string("dd.MM.yyyy")}"
                                                                            data-pair="${mark.task.lessonMessage.lessons.pair.id}"
                                                                            data-task-text="${(taskInfo.textMessage)!''}"
-                                                                           data-mark="${mark.mark!''}"
-                                                                           data-comment="${mark.comment!''}"
                                                                            data-deadline="${(taskInfo.deadline?? && taskInfo.deadline != "")?then(taskInfo.deadline, '')}"
                                                                            data-need-perform="${(taskInfo.needToPerform??)?then(taskInfo.needToPerform?string, 'false')}"
                                                                            <#if taskInfo.files?? && taskInfo.files?has_content>data-files="${taskInfo.files}"</#if>>

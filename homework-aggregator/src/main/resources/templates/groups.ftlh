@@ -76,7 +76,6 @@
                                             <th class="text-center">
                                                 <a href="#" class="text-decoration-none" data-bs-toggle="modal" data-bs-target="#viewMessageModal"
                                                    data-lesson-id="${task.lessons.id}"
-                                                   data-lesson-key="${task.lessons.date?datetime("yyyy-MM-dd")?string('yyyy-MM-dd')}_${task.lessons.pair.id}"
                                                    data-discipline="${selectedDiscipline.nameDiscipline}"
                                                    data-date="${task.lessons.date?datetime("yyyy-MM-dd")?string('dd.MM.yyyy')}"
                                                    data-pair="${task.lessons.pair.id}"
