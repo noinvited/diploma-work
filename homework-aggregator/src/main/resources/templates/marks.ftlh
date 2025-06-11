@@ -145,31 +145,26 @@
                         <label class="form-label">Дисциплина: <span id="viewModalDiscipline"></span></label><br>
                         <label class="form-label">Дата: <span id="viewModalDate"></span>, пара №<span id="viewModalPairNumber"></span></label>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Текст задания:</label>
-                        <div id="modalTaskText" class="border rounded p-3 bg-light"></div>
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <p class="card-text" id="modalTaskText"></p>
+                            <div id="modalFiles" style="display: none;">
+                                <p class="mb-1"><strong>Прикрепленные файлы:</strong></p>
+                                <div id="filesList"></div>
+                            </div>
+                            <div class="mt-2" id="modalBadges">
+                                <span class="badge bg-info" id="deadlineBadge" style="display: none;">
+                                    <i class="bi bi-clock"></i> Срок: <span id="modalDeadline"></span>
+                                </span>
+                                <span class="badge bg-warning text-dark" id="needPerformBadge" style="display: none;">
+                                    <i class="bi bi-exclamation-triangle"></i> Требуется выполнение
+                                </span>
+                            </div>
+                        </div>
                     </div>
-                    <div id="deadlineBadge" class="mb-3" style="display: none;">
-                        <span class="badge bg-warning">
-                            Срок сдачи: <span id="modalDeadline"></span>
-                        </span>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Статус:</label>
-                        <div id="modalStatus" class="border rounded p-3 bg-light"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Оценка:</label>
-                        <div id="modalMark" class="border rounded p-3 bg-light"></div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Комментарий преподавателя:</label>
-                        <div id="modalComment" class="border rounded p-3 bg-light"></div>
-                    </div>
-                    <div id="modalFiles" class="mb-3" style="display: none;">
-                        <label class="form-label">Прикрепленные файлы:</label>
-                        <div class="border rounded p-3 bg-light" id="filesList"></div>
-                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Закрыть</button>
                 </div>
             </div>
         </div>
@@ -297,8 +292,6 @@
                 const date = button.getAttribute('data-date');
                 const pair = button.getAttribute('data-pair');
                 const taskText = button.getAttribute('data-task-text');
-                const mark = button.getAttribute('data-mark');
-                const comment = button.getAttribute('data-comment');
                 const deadline = button.getAttribute('data-deadline');
                 const needPerform = button.getAttribute('data-need-perform') === 'true';
                 const files = button.getAttribute('data-files');
@@ -307,49 +300,36 @@
                 document.getElementById('viewModalDate').textContent = date;
                 document.getElementById('viewModalPairNumber').textContent = pair;
                 document.getElementById('modalTaskText').textContent = taskText || 'Текст задания отсутствует';
-                
-                // Отображение срока сдачи
+
+                // Обработка срока выполнения
                 const deadlineBadge = document.getElementById('deadlineBadge');
-                if (deadline && needPerform) {
+                if (deadline) {
                     document.getElementById('modalDeadline').textContent = deadline;
                     deadlineBadge.style.display = 'inline-block';
                 } else {
                     deadlineBadge.style.display = 'none';
                 }
 
-                // Отображение статуса
-                let status = 'Не требует выполнения';
-                if (needPerform) {
-                    if (mark) {
-                        status = 'Проверено';
-                    } else {
-                        status = 'Требуется выполнение';
-                    }
-                }
-                document.getElementById('modalStatus').textContent = status;
+                // Обработка метки "Требуется выполнение"
+                const needPerformBadge = document.getElementById('needPerformBadge');
+                needPerformBadge.style.display = needPerform ? 'inline-block' : 'none';
 
-                // Отображение оценки
-                document.getElementById('modalMark').textContent = mark || 'Оценка отсутствует';
-                
-                // Отображение комментария
-                document.getElementById('modalComment').textContent = comment || 'Комментарий отсутствует';
-
-                // Отображение файлов
+                // Обработка файлов
                 const modalFiles = document.getElementById('modalFiles');
                 const filesList = document.getElementById('filesList');
                 if (files && files.trim() !== '') {
-                    const fileNames = files.split(';').filter(name => name.trim() !== '');
-                    if (fileNames.length > 0) {
-                        filesList.innerHTML = fileNames.map(fileName => {
-                            const displayName = fileName.split('/').pop();
-                            return '<a href="/files/' + fileName + '" class="btn btn-sm btn-outline-primary me-2 mb-2">' +
-                                '<i class="bi bi-download"></i> ' + displayName +
-                                '</a>';
-                        }).join('');
-                        modalFiles.style.display = 'block';
-                    } else {
-                        modalFiles.style.display = 'none';
-                    }
+                    filesList.innerHTML = '';
+                    files.split(';').forEach(fileName => {
+                        if (fileName.trim() !== '') {
+                            const fileLink = document.createElement('a');
+                            fileLink.href = '/files/' + fileName;
+                            fileLink.className = 'btn btn-sm btn-outline-primary mb-1 me-1';
+                            const shortName = fileName.substring(fileName.lastIndexOf('/') + 1);
+                            fileLink.innerHTML = '<i class="bi bi-download"></i> ' + shortName;
+                            filesList.appendChild(fileLink);
+                        }
+                    });
+                    modalFiles.style.display = 'block';
                 } else {
                     modalFiles.style.display = 'none';
                 }
