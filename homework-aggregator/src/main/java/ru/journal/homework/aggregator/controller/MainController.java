@@ -60,6 +60,9 @@ public class MainController {
             @RequestParam(required = false, defaultValue = "0") Integer weekShift,
             Model model
     ) {
+        if(user.getStatus() == null){
+            return "studentSchedule";
+        }
         Group studentGroup = studentService.getStudentGroup(user);
         if (studentGroup != null) {
             Map<String, Lesson> lessons = studentService.getWeekLessons(studentGroup.getId(), weekShift);
@@ -83,6 +86,9 @@ public class MainController {
             @RequestParam(required = false, defaultValue = "0") Integer weekShift,
             Model model
     ) {
+        if(user.getStatus() == null){
+            return "teacherSchedule";
+        }
         Teacher teacher = teacherService.getTeacher(user);
         if (teacher != null) {
             Map<String, Lesson> lessons = teacherService.getWeekLessons(teacher.getId(), weekShift);
